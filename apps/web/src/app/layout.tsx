@@ -4,6 +4,7 @@ import Header from "@/components/layout/Header";
 import { ConditionalFooter } from "@/components/layout/ConditionalFooter";
 import { AuthProvider } from "@/providers/AuthProvider";
 import "./globals.css";
+import "@/styles/content.css";
 
 const pretendard = localFont({
   src: "../fonts/PretendardVariable.woff2",
