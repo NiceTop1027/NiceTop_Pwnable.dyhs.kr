@@ -1,0 +1,22 @@
+{
+  "name": "pwnable.dyhs.kr",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "concurrently -n web,api -c cyan,magenta \"npm run dev -w @pwnable/web\" \"npm run start:dev -w @pwnable/api\"",
+    "dev:web": "npm run dev -w @pwnable/web",
+    "dev:api": "npm run start:dev -w @pwnable/api",
+    "build": "npm run generate -w @pwnable/database && npm run build -w @pwnable/api && npm run build -w @pwnable/web",
+    "db:generate": "npm run generate -w @pwnable/database",
+    "db:migrate": "npm run migrate -w @pwnable/database",
+    "db:seed": "npm run seed -w @pwnable/database",
+    "db:studio": "npm run studio -w @pwnable/database"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}

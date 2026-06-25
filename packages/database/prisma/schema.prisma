@@ -1,0 +1,613 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  USER
+  MODERATOR
+  ADMIN
+  OWNER
+}
+
+enum CurriculumTier {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+  EXPERT
+}
+
+enum LectureTier {
+  FREE
+  BASIC
+  PREMIUM
+}
+
+enum Difficulty {
+  EASY
+  MEDIUM
+  HARD
+  INSANE
+}
+
+enum ChallengeCategory {
+  PWN
+  REV
+  WEB
+  CRYPTO
+  FORENSIC
+  MISC
+  OSINT
+}
+
+enum CtfMode {
+  JEOPARDY
+  ATTACK_DEFENSE
+}
+
+enum SeasonType {
+  SPRING
+  SUMMER
+  FALL
+  WINTER
+}
+
+enum BoardType {
+  FREE
+  QNA
+  STUDY
+  NOTICE
+}
+
+enum ContainerStatus {
+  PENDING
+  RUNNING
+  STOPPED
+  EXPIRED
+  ERROR
+}
+
+model User {
+  id           String   @id @default(cuid())
+  username     String   @unique
+  email        String?  @unique
+  passwordHash String
+  displayName  String?
+  role         Role     @default(USER)
+  score        Int      @default(0)
+  bio          String?
+  avatarUrl    String?
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  refreshTokens       RefreshToken[]
+  lectureProgress     UserLectureProgress[]
+  solves              Solve[]
+  containerInstances  ContainerInstance[]
+  ctfParticipants     CtfParticipant[]
+  ctfSubmissions      CtfSubmission[]
+  achievements        UserAchievement[]
+  posts               Post[]
+  comments            Comment[]
+  postLikes           PostLike[]
+  bookmarks           Bookmark[]
+  reports             Report[]
+  notices             Notice[]
+  loginLogs           LoginLog[]
+  submissionLogs      SubmissionLog[]
+  adminLogs           AdminLog[]
+  challengesAuthored  Challenge[] @relation("ChallengeAuthor")
+
+  @@index([score])
+  @@index([role])
+}
+
+model RefreshToken {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model LectureCategory {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  description String?
+  icon        String?
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  lectures Lecture[]
+
+  @@index([order])
+}
+
+model Lecture {
+  id          String      @id @default(cuid())
+  categoryId  String
+  title       String
+  slug        String      @unique
+  description String?
+  tier        LectureTier @default(FREE)
+  order       Int         @default(0)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  category        LectureCategory       @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  versions        LectureVersion[]
+  progress        UserLectureProgress[]
+  curriculumItems CurriculumItem[]
+  bookmarks       Bookmark[]
+
+  @@index([categoryId])
+  @@index([tier])
+  @@index([order])
+}
+
+model LectureVersion {
+  id          String   @id @default(cuid())
+  lectureId   String
+  version     Int      @default(1)
+  content     String   @db.Text
+  isPublished Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  lecture  Lecture               @relation(fields: [lectureId], references: [id], onDelete: Cascade)
+  progress UserLectureProgress[]
+
+  @@unique([lectureId, version])
+  @@index([lectureId])
+  @@index([isPublished])
+}
+
+model UserLectureProgress {
+  id             String    @id @default(cuid())
+  userId         String
+  lectureId      String
+  versionId      String?
+  completed      Boolean   @default(false)
+  progress       Int       @default(0)
+  lastAccessedAt DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  user    User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lecture Lecture         @relation(fields: [lectureId], references: [id], onDelete: Cascade)
+  version LectureVersion? @relation(fields: [versionId], references: [id], onDelete: SetNull)
+
+  @@unique([userId, lectureId])
+  @@index([userId])
+  @@index([lectureId])
+}
+
+model Curriculum {
+  id          String         @id @default(cuid())
+  title       String
+  slug        String         @unique
+  description String?
+  content     Json?
+  tier        CurriculumTier @default(BEGINNER)
+  order       Int            @default(0)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  items CurriculumItem[]
+
+  @@index([tier])
+  @@index([order])
+}
+
+model CurriculumItem {
+  id           String   @id @default(cuid())
+  curriculumId String
+  lectureId    String?
+  challengeId  String?
+  order        Int      @default(0)
+  createdAt    DateTime @default(now())
+
+  curriculum Curriculum @relation(fields: [curriculumId], references: [id], onDelete: Cascade)
+  lecture    Lecture?   @relation(fields: [lectureId], references: [id], onDelete: SetNull)
+  challenge  Challenge? @relation(fields: [challengeId], references: [id], onDelete: SetNull)
+
+  @@index([curriculumId])
+  @@index([order])
+}
+
+model Challenge {
+  id          String            @id @default(cuid())
+  title       String
+  slug        String            @unique
+  description String            @db.Text
+  category    ChallengeCategory
+  difficulty  Difficulty        @default(EASY)
+  points      Int               @default(100)
+  flagHash    String
+  dockerImage String?
+  isPublished Boolean           @default(false)
+  authorId    String?
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  author              User?                 @relation("ChallengeAuthor", fields: [authorId], references: [id], onDelete: SetNull)
+  attachments         ChallengeAttachment[]
+  solves              Solve[]
+  containerInstances  ContainerInstance[]
+  curriculumItems     CurriculumItem[]
+  ctfChallenges       CtfChallenge[]
+  ctfSubmissions      CtfSubmission[]
+  submissionLogs      SubmissionLog[]
+  bookmarks           Bookmark[]
+
+  @@index([category])
+  @@index([difficulty])
+  @@index([isPublished])
+  @@index([points])
+}
+
+model ChallengeAttachment {
+  id          String   @id @default(cuid())
+  challengeId String
+  filename    String
+  storageKey  String
+  mimeType    String?
+  size        Int      @default(0)
+  createdAt   DateTime @default(now())
+
+  challenge Challenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+
+  @@index([challengeId])
+}
+
+model Solve {
+  id          String   @id @default(cuid())
+  userId      String
+  challengeId String
+  isFirstBlood Boolean @default(false)
+  solvedAt    DateTime @default(now())
+
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  challenge Challenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, challengeId])
+  @@index([challengeId])
+  @@index([solvedAt])
+}
+
+model ContainerInstance {
+  id          String          @id @default(cuid())
+  userId      String
+  challengeId String
+  containerId String?
+  status      ContainerStatus @default(PENDING)
+  host        String?
+  port        Int?
+  expiresAt   DateTime?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  challenge Challenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([challengeId])
+  @@index([status])
+  @@index([expiresAt])
+}
+
+model Ctf {
+  id          String   @id @default(cuid())
+  title       String
+  slug        String   @unique
+  description String?  @db.Text
+  mode        CtfMode  @default(JEOPARDY)
+  startAt     DateTime
+  endAt       DateTime
+  isPublished Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  teams        CtfTeam[]
+  participants CtfParticipant[]
+  challenges   CtfChallenge[]
+  submissions  CtfSubmission[]
+
+  @@index([startAt, endAt])
+  @@index([isPublished])
+}
+
+model CtfTeam {
+  id         String   @id @default(cuid())
+  ctfId      String
+  name       String
+  inviteCode String   @unique
+  score      Int      @default(0)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  ctf          Ctf              @relation(fields: [ctfId], references: [id], onDelete: Cascade)
+  participants CtfParticipant[]
+  submissions  CtfSubmission[]
+
+  @@unique([ctfId, name])
+  @@index([ctfId])
+  @@index([score])
+}
+
+model CtfParticipant {
+  id        String   @id @default(cuid())
+  ctfId     String
+  userId    String
+  teamId    String?
+  score     Int      @default(0)
+  joinedAt  DateTime @default(now())
+
+  ctf  Ctf      @relation(fields: [ctfId], references: [id], onDelete: Cascade)
+  user User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  team CtfTeam? @relation(fields: [teamId], references: [id], onDelete: SetNull)
+
+  @@unique([ctfId, userId])
+  @@index([ctfId])
+  @@index([userId])
+  @@index([teamId])
+}
+
+model CtfChallenge {
+  id          String   @id @default(cuid())
+  ctfId       String
+  challengeId String
+  points      Int
+  order       Int      @default(0)
+  isHidden    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  ctf       Ctf       @relation(fields: [ctfId], references: [id], onDelete: Cascade)
+  challenge Challenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+
+  @@unique([ctfId, challengeId])
+  @@index([ctfId])
+  @@index([order])
+}
+
+model CtfSubmission {
+  id             String   @id @default(cuid())
+  ctfId          String
+  challengeId    String
+  userId         String
+  teamId         String?
+  submittedFlag  String
+  isCorrect      Boolean  @default(false)
+  submittedAt    DateTime @default(now())
+
+  ctf       Ctf       @relation(fields: [ctfId], references: [id], onDelete: Cascade)
+  challenge Challenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  team      CtfTeam?  @relation(fields: [teamId], references: [id], onDelete: SetNull)
+
+  @@index([ctfId])
+  @@index([challengeId])
+  @@index([userId])
+  @@index([submittedAt])
+}
+
+model Season {
+  id        String     @id @default(cuid())
+  year      Int
+  type      SeasonType
+  startAt   DateTime
+  endAt     DateTime
+  isActive  Boolean    @default(false)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  @@unique([year, type])
+  @@index([isActive])
+}
+
+model Achievement {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  description String
+  icon        String?
+  condition   String?
+  createdAt   DateTime @default(now())
+
+  users UserAchievement[]
+}
+
+model UserAchievement {
+  id            String   @id @default(cuid())
+  userId        String
+  achievementId String
+  earnedAt      DateTime @default(now())
+
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  achievement Achievement @relation(fields: [achievementId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, achievementId])
+  @@index([userId])
+}
+
+model Board {
+  id          String    @id @default(cuid())
+  name        String
+  slug        String    @unique
+  type        BoardType
+  description String?
+  order       Int       @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  posts Post[]
+
+  @@index([type])
+  @@index([order])
+}
+
+model Post {
+  id        String   @id @default(cuid())
+  boardId   String
+  authorId  String
+  title     String
+  content   String   @db.Text
+  viewCount Int      @default(0)
+  isPinned  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  board     Board      @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  author    User       @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  comments  Comment[]
+  likes     PostLike[]
+  bookmarks Bookmark[]
+  reports   Report[]
+
+  @@index([boardId])
+  @@index([authorId])
+  @@index([createdAt])
+  @@index([isPinned])
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  postId    String
+  authorId  String
+  parentId  String?
+  content   String   @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  post    Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
+  author  User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  parent  Comment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies Comment[] @relation("CommentReplies")
+  reports Report[]
+
+  @@index([postId])
+  @@index([authorId])
+  @@index([parentId])
+}
+
+model PostLike {
+  id        String   @id @default(cuid())
+  postId    String
+  userId    String
+  createdAt DateTime @default(now())
+
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, userId])
+  @@index([userId])
+}
+
+model Bookmark {
+  id          String   @id @default(cuid())
+  userId      String
+  postId      String?
+  lectureId   String?
+  challengeId String?
+  createdAt   DateTime @default(now())
+
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post      Post?      @relation(fields: [postId], references: [id], onDelete: Cascade)
+  lecture   Lecture?   @relation(fields: [lectureId], references: [id], onDelete: Cascade)
+  challenge Challenge? @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Report {
+  id         String   @id @default(cuid())
+  reporterId String
+  postId     String?
+  commentId  String?
+  reason     String
+  status     String   @default("PENDING")
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  reporter User     @relation(fields: [reporterId], references: [id], onDelete: Cascade)
+  post     Post?    @relation(fields: [postId], references: [id], onDelete: Cascade)
+  comment  Comment? @relation(fields: [commentId], references: [id], onDelete: Cascade)
+
+  @@index([reporterId])
+  @@index([status])
+}
+
+model Notice {
+  id          String   @id @default(cuid())
+  title       String
+  content     String   @db.Text
+  authorId    String
+  isPinned    Boolean  @default(false)
+  publishedAt DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  author User @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([publishedAt])
+  @@index([isPinned])
+}
+
+model LoginLog {
+  id        String   @id @default(cuid())
+  userId    String
+  ip        String?
+  userAgent String?
+  success   Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([createdAt])
+}
+
+model SubmissionLog {
+  id            String   @id @default(cuid())
+  userId        String
+  challengeId   String
+  submittedFlag String
+  isCorrect     Boolean  @default(false)
+  ip            String?
+  createdAt     DateTime @default(now())
+
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  challenge Challenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([challengeId])
+  @@index([createdAt])
+}
+
+model AdminLog {
+  id         String   @id @default(cuid())
+  adminId    String
+  action     String
+  targetType String?
+  targetId   String?
+  details    Json?
+  createdAt  DateTime @default(now())
+
+  admin User @relation(fields: [adminId], references: [id], onDelete: Cascade)
+
+  @@index([adminId])
+  @@index([createdAt])
+  @@index([action])
+}
