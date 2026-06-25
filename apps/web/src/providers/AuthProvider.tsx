@@ -9,11 +9,12 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { api, type AuthUser } from "@/lib/api";
+import { api, ApiError, type AuthUser } from "@/lib/api";
 import { scoreToLevel } from "@/lib/level";
 
 const ACCESS_KEY = "pwnable_access_token";
 const REFRESH_KEY = "pwnable_refresh_token";
+const SUSPENDED_FLAG_KEY = "pwnable_account_suspended";
 
 type AuthContextValue = {
   user: AuthUser | null;
@@ -68,8 +69,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(me);
         return;
       }
-    } catch {
-      // try refresh below
+    } catch (err) {
+      if (err instanceof ApiError && err.message === "Account suspended") {
+        sessionStorage.setItem(SUSPENDED_FLAG_KEY, "1");
+      }
     }
 
     if (refreshToken) {
@@ -78,7 +81,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         persistTokens(res.accessToken, res.refreshToken);
         setUser(res.user);
         return;
-      } catch {
+      } catch (err) {
+        if (err instanceof ApiError && err.message === "Account suspended") {
+          sessionStorage.setItem(SUSPENDED_FLAG_KEY, "1");
+        }
         clearTokens();
       }
     }
@@ -92,6 +98,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = useCallback(async (username: string, password: string) => {
     const res = await api.login(username, password);
+    sessionStorage.removeItem(SUSPENDED_FLAG_KEY);
     persistTokens(res.accessToken, res.refreshToken);
     setUser(res.user);
   }, []);
@@ -124,8 +131,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const refreshUser = useCallback(async () => {
     const token = getAccessToken();
     if (!token) return;
-    const me = await api.me(token);
-    setUser(me);
+    try {
+      const me = await api.me(token);
+      setUser(me);
+    } catch (err) {
+      if (err instanceof ApiError && err.message === "Account suspended") {
+        sessionStorage.setItem(SUSPENDED_FLAG_KEY, "1");
+        clearTokens();
+        setUser(null);
+      }
+      throw err;
+    }
   }, []);
 
   const value = useMemo(

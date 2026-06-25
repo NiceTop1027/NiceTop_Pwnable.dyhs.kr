@@ -69,6 +69,7 @@ export class AuthService {
         email: dto.email,
         displayName: dto.displayName ?? dto.username,
         passwordHash,
+        lastNoticeReadAt: new Date(),
       },
       select: USER_SELECT,
     });
@@ -82,15 +83,22 @@ export class AuthService {
     const bucket = loginBuckets.get(bucketKey);
 
     if (bucket && bucket.resetAt >= now && bucket.count >= 8) {
-      throw new UnauthorizedException('Too many login attempts. Try again later');
+      const retrySec = Math.max(1, Math.ceil((bucket.resetAt - now) / 1000));
+      throw new UnauthorizedException(
+        `Too many login attempts. Retry in ${retrySec} seconds`,
+      );
     }
 
     const user = await this.prisma.user.findUnique({
       where: { username: dto.username },
     });
 
-    if (!user || !user.isActive) {
-      await this.recordFailedLogin(bucketKey, user?.id);
+    if (user && !user.isActive) {
+      throw new UnauthorizedException('Account suspended');
+    }
+
+    if (!user) {
+      await this.recordFailedLogin(bucketKey);
       throw new UnauthorizedException('Invalid credentials');
     }
 
@@ -104,6 +112,13 @@ export class AuthService {
     }
 
     loginBuckets.delete(bucketKey);
+
+    if (!user.lastNoticeReadAt) {
+      await this.prisma.user.update({
+        where: { id: user.id },
+        data: { lastNoticeReadAt: new Date() },
+      });
+    }
 
     await this.prisma.loginLog.create({
       data: {
@@ -257,8 +272,12 @@ export class AuthService {
       },
     });
 
-    if (!user || !(await this.isUserActive(userId))) {
+    if (!user) {
       throw new UnauthorizedException();
+    }
+
+    if (!(await this.isUserActive(userId))) {
+      throw new UnauthorizedException('Account suspended');
     }
 
     return user;
@@ -276,6 +295,11 @@ export class AuthService {
 
     if (!stored || stored.expiresAt < new Date() || !stored.user) {
       throw new UnauthorizedException('Invalid refresh token');
+    }
+
+    if (!(await this.isUserActive(stored.user.id))) {
+      await this.prisma.refreshToken.delete({ where: { id: stored.id } });
+      throw new UnauthorizedException('Account suspended');
     }
 
     await this.prisma.refreshToken.delete({ where: { id: stored.id } });

@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Lock, User } from "lucide-react";
 import { Button } from "@/components/ui/Button";
@@ -21,6 +21,13 @@ export function LoginForm() {
   const [loading, setLoading] = useState(false);
   const [touched, setTouched] = useState({ username: false, password: false });
   const [values, setValues] = useState({ username: "", password: "" });
+
+  useEffect(() => {
+    if (sessionStorage.getItem("pwnable_account_suspended") === "1") {
+      sessionStorage.removeItem("pwnable_account_suspended");
+      setError("계정이 정지되었습니다. 관리자에게 문의해 주세요.");
+    }
+  }, []);
 
   const fieldErrors = {
     username: touched.username ? validateUsername(values.username) : null,
@@ -83,6 +90,10 @@ export function LoginForm() {
         onChange={(e) => setValues((v) => ({ ...v, password: e.target.value }))}
         onBlur={() => setTouched((t) => ({ ...t, password: true }))}
       />
+
+      <p className="auth-hint">
+        로그인 8회 실패 시 15분간 시도가 제한됩니다.
+      </p>
 
       <Button
         variant="fill"

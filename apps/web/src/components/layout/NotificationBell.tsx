@@ -6,6 +6,7 @@ import { Bell, ChevronRight, Megaphone } from "lucide-react";
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { api, type NotificationItem, type NotificationSummary } from "@/lib/api";
 import {
+  getGuestNoticeBaseline,
   getGuestNoticeReadAt,
   markGuestNoticeRead,
   markGuestNoticesReadNow,
@@ -14,13 +15,12 @@ import { getAccessToken, useAuth } from "@/providers/AuthProvider";
 
 function applyGuestReadState(summary: NotificationSummary): NotificationSummary {
   const lastReadAt = getGuestNoticeReadAt();
+  const cutoff = lastReadAt ?? getGuestNoticeBaseline();
   const items = summary.items.map((item) => ({
     ...item,
-    isRead: lastReadAt ? item.publishedAt <= lastReadAt : false,
+    isRead: item.publishedAt <= cutoff,
   }));
-  const unreadCount = lastReadAt
-    ? items.filter((item) => !item.isRead).length
-    : items.length;
+  const unreadCount = items.filter((item) => !item.isRead).length;
 
   return { unreadCount, items };
 }
@@ -150,27 +150,35 @@ export function NotificationBell({ className = "" }: { className?: string }) {
   }, [open]);
 
   async function handleMarkAllRead() {
-    if (user) {
-      const token = getAccessToken();
-      if (!token) return;
-      await api.markAllNotificationsRead(token);
-    } else {
-      markGuestNoticesReadNow();
+    try {
+      if (user) {
+        const token = getAccessToken();
+        if (!token) return;
+        await api.markAllNotificationsRead(token);
+      } else {
+        markGuestNoticesReadNow();
+      }
+      await load();
+    } catch {
+      setSummary({ unreadCount: 0, items: [] });
     }
-    await load();
   }
 
   async function handleItemClick(item: NotificationItem) {
     if (!item.isRead) {
-      if (user) {
-        const token = getAccessToken();
-        if (token) {
-          await api.markNotificationRead(token, item.id);
+      try {
+        if (user) {
+          const token = getAccessToken();
+          if (token) {
+            await api.markNotificationRead(token, item.id);
+          }
+        } else {
+          markGuestNoticeRead(item.publishedAt);
         }
-      } else {
-        markGuestNoticeRead(item.publishedAt);
+        await load();
+      } catch {
+        // 읽음 처리 실패해도 공지 페이지 이동은 허용
       }
-      await load();
     }
     setOpen(false);
   }

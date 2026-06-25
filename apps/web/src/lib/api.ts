@@ -11,6 +11,27 @@ export class ApiError extends Error {
   }
 }
 
+function extractErrorMessage(data: unknown, status: number): string {
+  if (!data || typeof data !== "object") {
+    return status === 429
+      ? "Too many requests. Please try again later"
+      : "Request failed";
+  }
+
+  const payload = data as { message?: unknown; error?: unknown };
+  const raw = payload.message ?? payload.error;
+
+  if (typeof raw === "string" && raw.trim()) return raw;
+  if (Array.isArray(raw)) {
+    const joined = raw.filter((item) => typeof item === "string").join(", ");
+    if (joined) return joined;
+  }
+
+  return status === 429
+    ? "Too many requests. Please try again later"
+    : "Request failed";
+}
+
 type FetchOptions = RequestInit & {
   token?: string | null;
 };
@@ -34,11 +55,7 @@ export async function apiFetch<T>(
   const data = await res.json().catch(() => null);
 
   if (!res.ok) {
-    const raw = (data as { message?: string | string[] })?.message;
-    const message = Array.isArray(raw)
-      ? raw.join(", ")
-      : raw ?? "Request failed";
-    throw new ApiError(message, res.status, data);
+    throw new ApiError(extractErrorMessage(data, res.status), res.status, data);
   }
 
   return data as T;
@@ -286,11 +303,7 @@ export const api = {
 
     const data = await res.json().catch(() => null);
     if (!res.ok) {
-      const raw = (data as { message?: string | string[] })?.message;
-      const message = Array.isArray(raw)
-        ? raw.join(", ")
-        : raw ?? "Request failed";
-      throw new ApiError(message, res.status, data);
+      throw new ApiError(extractErrorMessage(data, res.status), res.status, data);
     }
 
     return data as AuthUser;
@@ -571,11 +584,7 @@ export const adminApi = {
 
     const data = await res.json().catch(() => null);
     if (!res.ok) {
-      const raw = (data as { message?: string | string[] })?.message;
-      const message = Array.isArray(raw)
-        ? raw.join(", ")
-        : raw ?? "Upload failed";
-      throw new ApiError(message, res.status, data);
+      throw new ApiError(extractErrorMessage(data, res.status), res.status, data);
     }
 
     return data as { url: string };

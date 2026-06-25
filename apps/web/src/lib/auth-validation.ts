@@ -48,8 +48,25 @@ export function passwordStrength(value: string): {
 }
 
 export function translateApiError(message: string): string {
+  const rateLimitMatch = message.match(
+    /Too many login attempts\. Retry in (\d+) seconds/,
+  );
+  if (rateLimitMatch) {
+    const seconds = Number.parseInt(rateLimitMatch[1], 10);
+    if (seconds >= 60) {
+      const minutes = Math.ceil(seconds / 60);
+      return `로그인 시도가 너무 많습니다. ${minutes}분 후에 다시 시도해 주세요.`;
+    }
+    return `로그인 시도가 너무 많습니다. ${seconds}초 후에 다시 시도해 주세요.`;
+  }
+
   const map: Record<string, string> = {
     "Invalid credentials": "아이디 또는 비밀번호가 올바르지 않습니다",
+    "Account suspended": "계정이 정지되었습니다. 관리자에게 문의해 주세요.",
+    "Too many login attempts. Try again later":
+      "로그인 시도가 너무 많습니다. 15분 후에 다시 시도해 주세요.",
+    "Too many requests. Please try again later":
+      "요청이 너무 많습니다. 잠시 후 다시 시도해 주세요.",
     "Username or email already exists": "이미 사용 중인 아이디 또는 이메일입니다",
     "Username can only contain letters, numbers, and underscores":
       "아이디는 영문, 숫자, 밑줄(_)만 사용할 수 있습니다",

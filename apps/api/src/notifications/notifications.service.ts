@@ -21,10 +21,10 @@ export class NotificationsService {
   async getRecentPublic() {
     const items = await this.getRecentNotices();
     return {
-      unreadCount: items.length,
+      unreadCount: 0,
       items: items.map((item) => ({
         ...item,
-        isRead: false,
+        isRead: true,
       })),
     };
   }
@@ -32,29 +32,35 @@ export class NotificationsService {
   async getForUser(userId: string) {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
-      select: { lastNoticeReadAt: true },
+      select: { lastNoticeReadAt: true, createdAt: true },
     });
 
     if (!user) {
       throw new NotFoundException('User not found');
     }
 
+    let lastReadAt = user.lastNoticeReadAt;
+    if (!lastReadAt) {
+      lastReadAt = new Date();
+      await this.prisma.user.update({
+        where: { id: userId },
+        data: { lastNoticeReadAt: lastReadAt },
+      });
+    }
+
     const items = await this.getRecentNotices();
-    const lastReadAt = user.lastNoticeReadAt;
 
     const enriched = items.map((item) => ({
       ...item,
-      isRead: lastReadAt ? item.publishedAt <= lastReadAt : false,
+      isRead: item.publishedAt <= lastReadAt!,
     }));
 
     const unreadCount = await this.prisma.notice.count({
-      where: lastReadAt
-        ? { publishedAt: { gt: lastReadAt } }
-        : undefined,
+      where: { publishedAt: { gt: lastReadAt } },
     });
 
     return {
-      unreadCount: lastReadAt ? unreadCount : items.length,
+      unreadCount,
       items: enriched,
     };
   }

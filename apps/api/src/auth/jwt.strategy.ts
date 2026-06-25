@@ -40,8 +40,12 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       },
     });
 
-    if (!user || !user.isActive) {
+    if (!user) {
       throw new UnauthorizedException();
+    }
+
+    if (!user.isActive) {
+      throw new UnauthorizedException('Account suspended');
     }
 
     return user;

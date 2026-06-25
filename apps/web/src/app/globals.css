@@ -819,6 +819,13 @@ a {
   gap: 1.25rem;
 }
 
+.auth-hint {
+  margin: -0.25rem 0 0;
+  font-size: 0.75rem;
+  line-height: 1.5;
+  color: var(--text-tertiary);
+}
+
 .auth-field {
   display: flex;
   flex-direction: column;
