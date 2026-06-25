@@ -1,7 +1,6 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { api } from "@/lib/api";
-import { FadeIn } from "@/components/pages/FadeIn";
+import { LectureArticle } from "@/components/lectures/LectureArticle";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -26,23 +25,11 @@ export default async function LecturePage({ params }: Props) {
   }
 
   return (
-    <div className="pb-24">
-      <FadeIn>
-        <Link href="/lectures" className="text-caption hover:opacity-70">
-          ‹ 강의
-        </Link>
-        <p className="text-eyebrow mt-8 mb-3">{lecture.category.name}</p>
-        <h1 className="text-headline-sm">{lecture.title}</h1>
-        {lecture.description && (
-          <p className="text-body-lg mt-4">{lecture.description}</p>
-        )}
-      </FadeIn>
-
-      <FadeIn delay={0.1} className="mt-12">
-        <article className="whitespace-pre-wrap rounded-2xl border border-[var(--divider)] bg-[var(--bg-muted)] p-8 text-body leading-relaxed">
-          {lecture.content}
-        </article>
-      </FadeIn>
-    </div>
+    <LectureArticle
+      title={lecture.title}
+      description={lecture.description}
+      category={lecture.category.name}
+      content={lecture.content}
+    />
   );
 }

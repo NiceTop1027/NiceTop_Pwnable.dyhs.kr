@@ -6,72 +6,71 @@ import { motion, useScroll, useTransform } from "framer-motion";
 import PageHeader from "@/components/ui/PageHeader";
 import { Button } from "@/components/ui/Button";
 import { FadeIn } from "@/components/pages/FadeIn";
-import { CurriculumRichContent } from "@/components/notion/CurriculumRichContent";
+import { DocumentContent } from "@/components/content/DocumentContent";
 import { useAuth } from "@/providers/AuthProvider";
 import type { CurriculumTrack } from "@/lib/curriculum";
 
-function TrackSection({ track }: { track: CurriculumTrack }) {
+function TrackSection({ track, index }: { track: CurriculumTrack; index: number }) {
   const ref = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({
     target: ref,
     offset: ["start end", "center center"],
   });
   const opacity = useTransform(scrollYProgress, [0, 0.4], [0, 1]);
-  const y = useTransform(scrollYProgress, [0, 0.4], [60, 0]);
+  const y = useTransform(scrollYProgress, [0, 0.4], [40, 0]);
 
   return (
-    <section ref={ref} className="border-t border-[var(--divider)] py-24">
+    <section ref={ref} className="curriculum-track">
       <motion.div style={{ opacity, y }}>
-        <div className="flex flex-wrap items-baseline justify-between gap-4">
+        <header className="curriculum-track-header">
+          <span className="curriculum-track-index">{String(index + 1).padStart(2, "0")}</span>
           <div>
-            <p className="text-eyebrow mb-2">{track.name}</p>
-            <h2 className="text-[clamp(1.75rem,3vw,2.5rem)] font-semibold tracking-tight text-[var(--text)]">
-              {track.label} 트랙
-            </h2>
+            <p className="text-eyebrow">{track.name}</p>
+            <h2 className="curriculum-track-title">{track.label} 트랙</h2>
+            {track.desc && !track.content && (
+              <p className="curriculum-track-desc">{track.desc}</p>
+            )}
           </div>
-        </div>
+        </header>
+
         {track.content ? (
-          <div className="notion-viewer-public mt-8 max-w-3xl">
-            <CurriculumRichContent content={track.content} />
+          <div className="curriculum-track-body">
+            <DocumentContent content={track.content} />
           </div>
         ) : (
-          track.desc && <p className="text-body-lg mt-6 max-w-2xl">{track.desc}</p>
+          track.desc && <p className="curriculum-track-desc curriculum-track-desc-standalone">{track.desc}</p>
         )}
-        <div className="mt-12">
-          {track.steps.length > 0 ? (
-            track.steps.map((step, i) => {
-              const inner = (
+
+        {track.steps.length > 0 ? (
+          <ol className="curriculum-step-list">
+            {track.steps.map((step, i) => {
+              const content = (
                 <>
-                  <span className="text-caption w-8 pt-0.5">
-                    {String(i + 1).padStart(2, "0")}
+                  <span className="curriculum-step-index">{String(i + 1).padStart(2, "0")}</span>
+                  <span className="curriculum-step-body">
+                    <span className="curriculum-step-title">{step.title}</span>
+                    {step.desc && <span className="curriculum-step-desc">{step.desc}</span>}
                   </span>
-                  <div>
-                    <p className="text-[1.0625rem] font-medium text-[var(--text)]">
-                      {step.title}
-                    </p>
-                    {step.desc && <p className="text-body mt-1">{step.desc}</p>}
-                  </div>
+                  {step.href && <span className="curriculum-step-arrow" aria-hidden>›</span>}
                 </>
               );
 
-              return step.href ? (
-                <Link
-                  key={`${step.title}-${i}`}
-                  href={step.href}
-                  className="feature-row group flex gap-6 !flex-row items-start"
-                >
-                  {inner}
-                </Link>
-              ) : (
-                <div key={`${step.title}-${i}`} className="flex gap-6 border-b border-[var(--divider)] py-5">
-                  {inner}
-                </div>
+              return (
+                <li key={`${step.title}-${i}`} className="curriculum-step">
+                  {step.href ? (
+                    <Link href={step.href} className="curriculum-step-link">
+                      {content}
+                    </Link>
+                  ) : (
+                    <div className="curriculum-step-link curriculum-step-link-static">{content}</div>
+                  )}
+                </li>
               );
-            })
-          ) : (
-            <p className="text-body py-8">아직 등록된 항목이 없습니다</p>
-          )}
-        </div>
+            })}
+          </ol>
+        ) : (
+          <p className="text-body py-8">아직 등록된 항목이 없습니다</p>
+        )}
       </motion.div>
     </section>
   );
@@ -81,7 +80,7 @@ export default function CurriculumContent({ tracks }: { tracks: CurriculumTrack[
   const { user, isLoading } = useAuth();
 
   return (
-    <div className="pb-24">
+    <div className="curriculum-page pb-24">
       <FadeIn>
         <PageHeader
           title="커리큘럼"
@@ -90,7 +89,11 @@ export default function CurriculumContent({ tracks }: { tracks: CurriculumTrack[
       </FadeIn>
 
       {tracks.length > 0 ? (
-        tracks.map((track) => <TrackSection key={track.slug} track={track} />)
+        <div className="curriculum-tracks">
+          {tracks.map((track, i) => (
+            <TrackSection key={track.slug} track={track} index={i} />
+          ))}
+        </div>
       ) : (
         <FadeIn>
           <p className="text-body py-16 text-center">등록된 커리큘럼이 없습니다</p>
@@ -99,7 +102,7 @@ export default function CurriculumContent({ tracks }: { tracks: CurriculumTrack[
 
       {!isLoading && (
         <FadeIn>
-          <div className="border-t border-[var(--divider)] py-24 text-center">
+          <div className="curriculum-cta">
             {user ? (
               <>
                 <h2 className="text-headline-sm">학습을 이어가세요</h2>
