@@ -443,6 +443,29 @@ export const adminApi = {
 
   deleteNotice: (token: string, id: string) =>
     apiFetch(`/admin/notices/${id}`, { method: "DELETE", token }),
+
+  uploadContentImage: async (token: string, file: File) => {
+    const form = new FormData();
+    form.append("file", file);
+
+    const res = await fetch(`${API_URL}/api/admin/uploads/content`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+      body: form,
+      cache: "no-store",
+    });
+
+    const data = await res.json().catch(() => null);
+    if (!res.ok) {
+      const raw = (data as { message?: string | string[] })?.message;
+      const message = Array.isArray(raw)
+        ? raw.join(", ")
+        : raw ?? "Upload failed";
+      throw new ApiError(message, res.status, data);
+    }
+
+    return data as { url: string };
+  },
 };
 
 export function isStaff(role?: string) {

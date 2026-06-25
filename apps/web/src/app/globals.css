@@ -1845,6 +1845,38 @@ a {
   border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 
+.notion-editor .bn-visual-media {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  border-radius: 0.875rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.32);
+}
+
+.notion-editor .bn-visual-media-wrapper {
+  max-width: 100%;
+}
+
+.notion-editor .bn-file-block-content-wrapper {
+  border: none;
+  background: transparent;
+}
+
+.notion-editor .bn-file-name-with-icon {
+  border-radius: 0.75rem;
+  border: 1px dashed rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.notion-editor .bn-panel {
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 0.875rem !important;
+  background: rgba(10, 10, 12, 0.96) !important;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45) !important;
+  backdrop-filter: blur(20px);
+}
+
 .notion-editor .bn-editor,
 .notion-viewer .bn-editor,
 .notion-viewer-public .bn-editor {

@@ -6,6 +6,9 @@ import { ko } from "@blocknote/core/locales";
 import { BlockNoteView } from "@blocknote/mantine";
 import { FormattingToolbarController, useCreateBlockNote } from "@blocknote/react";
 import { useCallback } from "react";
+import { adminApi } from "@/lib/api";
+import { resolveMediaUrl } from "@/lib/media";
+import { getAccessToken } from "@/providers/AuthProvider";
 import { DocumentFormattingToolbar } from "./DocumentFormattingToolbar";
 
 type NotionEditorProps = {
@@ -26,9 +29,32 @@ export function NotionEditor({
       ? initialContent
       : defaultBlocks;
 
+  const uploadFile = useCallback(async (file: File) => {
+    const token = getAccessToken();
+    if (!token) {
+      throw new Error("로그인이 필요합니다");
+    }
+
+    const { url } = await adminApi.uploadContentImage(token, file);
+    return {
+      props: {
+        name: file.name,
+        url,
+        showPreview: true,
+      },
+    };
+  }, []);
+
+  const resolveFileUrl = useCallback(
+    async (url: string) => resolveMediaUrl(url) ?? url,
+    [],
+  );
+
   const editor = useCreateBlockNote({
     dictionary: ko,
     initialContent: blocks,
+    uploadFile,
+    resolveFileUrl,
   });
 
   const handleChange = useCallback(() => {
@@ -45,6 +71,7 @@ export function NotionEditor({
         sideMenu={editable}
         slashMenu={editable}
         linkToolbar={editable}
+        filePanel={editable}
         formattingToolbar={false}
         emojiPicker={false}
         comments={false}

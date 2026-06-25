@@ -2,13 +2,36 @@
 
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { resolveMediaUrl } from "@/lib/media";
 
 export function MarkdownContent({ content }: { content: string }) {
   if (!content.trim()) return null;
 
   return (
     <div className="doc-prose">
-      <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
+      <ReactMarkdown
+        remarkPlugins={[remarkGfm]}
+        components={{
+          img: ({ src, alt }) => {
+            const resolved = resolveMediaUrl(
+              typeof src === "string" ? src : undefined,
+            );
+            if (!resolved) return null;
+            return (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={resolved}
+                alt={alt ?? ""}
+                className="doc-image"
+                loading="lazy"
+                decoding="async"
+              />
+            );
+          },
+        }}
+      >
+        {content}
+      </ReactMarkdown>
     </div>
   );
 }

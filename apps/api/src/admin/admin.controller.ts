@@ -2,11 +2,17 @@ import {
   Body,
   Controller,
   Delete,
+  FileTypeValidator,
   Get,
+  MaxFileSizeValidator,
   Param,
+  ParseFilePipe,
   Patch,
   Post,
+  UploadedFile,
+  UseInterceptors,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { AdminRoles } from '../common/decorators/admin-roles.decorator';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { AdminService } from './admin.service';
@@ -210,5 +216,22 @@ export class AdminController {
   @Get('ctf')
   listCtfs() {
     return this.adminService.listCtfs();
+  }
+
+  @Post('uploads/content')
+  @UseInterceptors(FileInterceptor('file'))
+  uploadContentImage(
+    @CurrentUser() admin: { id: string },
+    @UploadedFile(
+      new ParseFilePipe({
+        validators: [
+          new MaxFileSizeValidator({ maxSize: 5 * 1024 * 1024 }),
+          new FileTypeValidator({ fileType: /^image\/(jpeg|png|webp|gif)$/ }),
+        ],
+      }),
+    )
+    file: Express.Multer.File,
+  ) {
+    return this.adminService.uploadContentImage(admin.id, file);
   }
 }

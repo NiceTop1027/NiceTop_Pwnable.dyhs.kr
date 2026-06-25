@@ -229,6 +229,28 @@
   border-top: 1px solid var(--divider);
 }
 
+.doc-prose img,
+.doc-image {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 1.75rem auto;
+  border-radius: 0.875rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+}
+
+.doc-prose figure {
+  margin: 1.75rem 0;
+}
+
+.doc-prose figcaption {
+  margin-top: 0.625rem;
+  text-align: center;
+  font-size: 0.875rem;
+  color: var(--text-tertiary);
+}
+
 .doc-prose table {
   width: 100%;
   margin: 1.25rem 0;

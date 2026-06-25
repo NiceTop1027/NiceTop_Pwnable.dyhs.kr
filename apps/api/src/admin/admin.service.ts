@@ -1,9 +1,13 @@
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
 import * as argon2 from 'argon2';
+import { existsSync, mkdirSync, writeFileSync } from 'fs';
+import { join } from 'path';
+import { randomBytes } from 'crypto';
 import { Prisma, Role } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { AdminLogService } from './admin-log.service';
@@ -534,5 +538,38 @@ export class AdminService {
       orderBy: { startAt: 'desc' },
       include: { _count: { select: { challenges: true, participants: true } } },
     });
+  }
+
+  async uploadContentImage(adminId: string, file: Express.Multer.File) {
+    if (!file?.buffer?.length) {
+      throw new BadRequestException('No file uploaded');
+    }
+
+    const extByMime: Record<string, string> = {
+      'image/jpeg': '.jpg',
+      'image/png': '.png',
+      'image/webp': '.webp',
+      'image/gif': '.gif',
+    };
+    const ext = extByMime[file.mimetype];
+    if (!ext) {
+      throw new BadRequestException('Only JPEG, PNG, WebP, and GIF are allowed');
+    }
+
+    const dir = join(process.cwd(), 'uploads', 'content');
+    if (!existsSync(dir)) {
+      mkdirSync(dir, { recursive: true });
+    }
+
+    const filename = `${randomBytes(16).toString('hex')}${ext}`;
+    writeFileSync(join(dir, filename), file.buffer);
+
+    const url = `/api/uploads/content/${filename}`;
+
+    await this.adminLog.log(adminId, 'content.upload', 'asset', filename, {
+      url,
+    });
+
+    return { url };
   }
 }

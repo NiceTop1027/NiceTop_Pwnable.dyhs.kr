@@ -189,12 +189,11 @@ export function DocumentEditorShell({
 
         <div className="notion-shortcuts" aria-label="단축키 안내">
           <span className="notion-shortcut">
-            <kbd>/</kbd> 블록 추가
+            <kbd>/</kbd> 블록 · 이미지 추가
           </span>
+          <span className="notion-shortcut">이미지 파일 드래그·붙여넣기</span>
           <span className="notion-shortcut">
-            드래그 <kbd>B</kbd>
-            <kbd>I</kbd>
-            <kbd>⌘S</kbd> 서식 · 저장
+            <kbd>⌘</kbd>+<kbd>S</kbd> 저장
           </span>
         </div>
 
