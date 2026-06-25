@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
+import { UserRoleBadge } from "@/components/ui/UserRoleBadge";
 import { adminNav, getAdminPageMeta } from "@/lib/admin-nav";
 import { useAuth } from "@/providers/AuthProvider";
 import { AdminPageHeader } from "./ui/AdminPageHeader";
@@ -72,9 +73,11 @@ export function AdminShell({ children }: { children: ReactNode }) {
           </nav>
           <div className="admin-sidebar-footer">
             <p className="admin-sidebar-user">
-              {user?.displayName ?? user?.username}
+              <span className="admin-sidebar-user-row">
+                {user?.displayName ?? user?.username}
+                <UserRoleBadge role={user?.role} />
+              </span>
             </p>
-            <p className="admin-sidebar-role">{user?.role}</p>
             <button
               type="button"
               className="admin-sidebar-logout"

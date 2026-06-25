@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { api } from "@/lib/api";
 import { DocArticle } from "@/components/content/DocArticle";
 import { NoticeReadMarker } from "@/components/notices/NoticeReadMarker";
+import { UserNameWithBadge } from "@/components/ui/UserNameWithBadge";
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -32,7 +33,18 @@ export default async function NoticePage({ params }: Props) {
         backHref="/notices"
         backLabel="공지사항"
         title={notice.title}
-        meta={`${notice.author.displayName ?? notice.author.username} · ${new Date(notice.publishedAt).toLocaleDateString("ko-KR")}`}
+        meta={
+          <>
+            <UserNameWithBadge
+              name={notice.author.displayName ?? notice.author.username}
+              role={notice.author.role}
+            />
+            <span className="doc-meta-sep">
+              {" · "}
+              {new Date(notice.publishedAt).toLocaleDateString("ko-KR")}
+            </span>
+          </>
+        }
         content={notice.content}
       />
     </>

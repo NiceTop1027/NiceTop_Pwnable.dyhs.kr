@@ -47,6 +47,7 @@ export class UsersService {
         id: true,
         username: true,
         displayName: true,
+        role: true,
         score: true,
         _count: {
           select: {
@@ -61,6 +62,7 @@ export class UsersService {
       id: user.id,
       username: user.username,
       displayName: user.displayName,
+      role: user.role,
       score: user.score,
       level: scoreToLevel(user.score),
       _count: user._count,

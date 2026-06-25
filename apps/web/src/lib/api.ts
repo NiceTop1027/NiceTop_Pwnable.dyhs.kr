@@ -84,6 +84,7 @@ export type RankingEntry = {
   id: string;
   username: string;
   displayName: string | null;
+  role: string;
   score: number;
   level: number;
   _count: { solves: number };
@@ -150,7 +151,7 @@ export type Notice = {
   content: string;
   isPinned: boolean;
   publishedAt: string;
-  author: { username: string; displayName: string | null };
+  author: { username: string; displayName: string | null; role: string };
 };
 
 export type NotificationItem = {
@@ -594,3 +595,5 @@ export const adminApi = {
 export function isStaff(role?: string) {
   return role === "OWNER" || role === "ADMIN";
 }
+
+export { hasRoleBadge, isStaffRole } from "./roles";

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { adminApi } from "@/lib/api";
 import { getAccessToken } from "@/providers/AuthProvider";
+import { UserNameWithBadge } from "@/components/ui/UserNameWithBadge";
 import { AdminBadge } from "./ui/AdminBadge";
 import { AdminButton } from "./ui/AdminButton";
 import { AdminCard } from "./ui/AdminCard";
@@ -17,13 +18,6 @@ type UserRow = {
   score: number;
   isActive: boolean;
   _count: { solves: number };
-};
-
-const roleBadge: Record<string, "default" | "success" | "warning" | "danger"> = {
-  USER: "default",
-  MODERATOR: "warning",
-  ADMIN: "success",
-  OWNER: "success",
 };
 
 export function UsersAdminPanel() {
@@ -67,13 +61,15 @@ export function UsersAdminPanel() {
         users.map((u) => (
           <AdminRow
             key={u.id}
-            title={u.displayName ?? u.username}
+            title={
+              <UserNameWithBadge
+                name={u.displayName ?? u.username}
+                role={u.role}
+              />
+            }
             meta={`@${u.username} · ${u.score.toLocaleString("ko-KR")} XP · ${u._count.solves} solved`}
             badge={
-              <>
-                <AdminBadge variant={roleBadge[u.role] ?? "default"}>{u.role}</AdminBadge>
-                {!u.isActive && <AdminBadge variant="danger">정지</AdminBadge>}
-              </>
+              !u.isActive ? <AdminBadge variant="danger">정지</AdminBadge> : undefined
             }
             actions={
               <>

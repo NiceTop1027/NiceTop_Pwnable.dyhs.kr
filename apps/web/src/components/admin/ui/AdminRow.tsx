@@ -6,7 +6,7 @@ export function AdminRow({
   badge,
   actions,
 }: {
-  title: string;
+  title: ReactNode;
   meta?: string;
   badge?: ReactNode;
   actions?: ReactNode;

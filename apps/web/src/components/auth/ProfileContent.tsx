@@ -17,6 +17,8 @@ import { AuthField } from "@/components/auth/AuthField";
 import { AuthAlert } from "@/components/auth/AuthAlert";
 import { PasswordStrength } from "@/components/auth/PasswordStrength";
 import { ProfileAvatar } from "@/components/auth/ProfileAvatar";
+import { UserRoleBadge } from "@/components/ui/UserRoleBadge";
+import { isStaffRole } from "@/lib/roles";
 
 type Tab = "overview" | "profile" | "security";
 
@@ -29,13 +31,6 @@ const tabs: { id: Tab; label: string }[] = [
   { id: "profile", label: "프로필" },
   { id: "security", label: "보안" },
 ];
-
-const roleLabels: Record<string, string> = {
-  USER: "일반 회원",
-  MODERATOR: "모더레이터",
-  ADMIN: "관리자",
-  OWNER: "소유자",
-};
 
 function xpProgress(score: number) {
   const lv = scoreToLevel(score);
@@ -118,7 +113,7 @@ export function ProfileContent() {
 
   const displayName = user.displayName ?? user.username;
   const xp = xpProgress(user.score);
-  const isStaff = user.role === "OWNER" || user.role === "ADMIN";
+  const isStaff = isStaffRole(user.role);
 
   async function saveProfile(e: FormEvent) {
     e.preventDefault();
@@ -200,10 +195,13 @@ export function ProfileContent() {
           }}
         />
         <div className="profile-hero-body">
-          <h1 className="profile-hero-name">{displayName}</h1>
-          <p className="profile-hero-meta">
-            @{user.username} · {roleLabels[user.role] ?? user.role}
-          </p>
+          <h1 className="profile-hero-name">
+            <span className="profile-hero-name-row">
+              {displayName}
+              <UserRoleBadge role={user.role} />
+            </span>
+          </h1>
+          <p className="profile-hero-meta">@{user.username}</p>
           <div className="profile-xp-row">
             <span>Lv.{xp.level}</span>
             <div className="profile-xp-track">

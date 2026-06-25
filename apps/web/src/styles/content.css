@@ -84,6 +84,10 @@
 }
 
 .doc-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.125rem;
   margin-top: 1rem;
   font-size: 0.8125rem;
   letter-spacing: 0.01em;

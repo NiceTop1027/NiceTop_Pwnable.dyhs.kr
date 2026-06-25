@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
+import { UserNameWithBadge } from "@/components/ui/UserNameWithBadge";
+import { isStaffRole } from "@/lib/roles";
 import { useAuth } from "@/providers/AuthProvider";
 
 export function HeaderAuth({ mobile = false }: { mobile?: boolean }) {
@@ -13,7 +15,7 @@ export function HeaderAuth({ mobile = false }: { mobile?: boolean }) {
 
   if (user) {
     const name = user.displayName ?? user.username;
-    const staff = user.role === "OWNER" || user.role === "ADMIN";
+    const staff = isStaffRole(user.role);
 
     if (mobile) {
       return (
@@ -25,9 +27,9 @@ export function HeaderAuth({ mobile = false }: { mobile?: boolean }) {
           )}
           <Link
             href="/profile"
-            className="text-center text-[1.0625rem] text-[var(--text)]"
+            className="flex justify-center text-[1.0625rem] text-[var(--text)]"
           >
-            {name}
+            <UserNameWithBadge name={name} role={user.role} />
           </Link>
         </div>
       );
@@ -45,9 +47,9 @@ export function HeaderAuth({ mobile = false }: { mobile?: boolean }) {
         )}
         <Link
           href="/profile"
-          className="text-xs text-[var(--text-secondary)] transition-opacity hover:opacity-60"
+          className="inline-flex items-center text-xs text-[var(--text-secondary)] transition-opacity hover:opacity-60"
         >
-          {name}
+          <UserNameWithBadge name={name} role={user.role} />
         </Link>
       </>
     );

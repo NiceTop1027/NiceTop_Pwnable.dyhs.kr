@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import type { ReactNode } from "react";
 import { FadeIn } from "@/components/pages/FadeIn";
 import { DocumentContent } from "@/components/content/DocumentContent";
 
@@ -10,7 +11,7 @@ type DocArticleProps = {
   eyebrow?: string;
   title: string;
   lead?: string | null;
-  meta?: string;
+  meta?: ReactNode;
   content: string;
 };
 
