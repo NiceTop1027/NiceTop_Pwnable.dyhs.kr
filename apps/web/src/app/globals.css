@@ -1513,25 +1513,86 @@ a {
 }
 
 .notion-editor .bn-root,
+.notion-editor .bn-mantine,
 .notion-viewer .bn-root,
 .notion-viewer-public .bn-root {
   --bn-font-family: var(--font-sans);
   --bn-colors-editor-text: var(--text);
   --bn-colors-editor-background: transparent;
   --bn-colors-menu-text: var(--text);
-  --bn-colors-menu-background: var(--bg-elevated);
+  --bn-colors-menu-background: color-mix(in srgb, var(--bg-elevated) 92%, transparent);
   --bn-colors-tooltip-text: var(--text);
   --bn-colors-tooltip-background: var(--bg-elevated);
   --bn-colors-hovered-text: var(--text);
-  --bn-colors-hovered-background: rgba(255, 255, 255, 0.06);
+  --bn-colors-hovered-background: rgba(255, 255, 255, 0.08);
   --bn-colors-selected-text: var(--text);
-  --bn-colors-selected-background: rgba(255, 255, 255, 0.1);
+  --bn-colors-selected-background: rgba(255, 255, 255, 0.14);
   --bn-colors-disabled-text: var(--text-tertiary);
-  --bn-colors-disabled-background: var(--bg-muted);
-  --bn-colors-shadow: rgba(0, 0, 0, 0.4);
-  --bn-colors-border: var(--divider);
+  --bn-colors-disabled-background: transparent;
+  --bn-colors-shadow: rgba(0, 0, 0, 0.45);
+  --bn-colors-border: color-mix(in srgb, var(--divider) 70%, transparent);
   --bn-colors-side-menu: var(--text-tertiary);
-  --bn-border-radius: 0.5rem;
+  --bn-border-radius: 0.625rem;
+}
+
+/* 선택 시 회색/파란 박스 제거 */
+.notion-editor .bn-block-content.ProseMirror-selectednode > *,
+.notion-editor .ProseMirror-selectednode > .bn-block-content > * {
+  outline: none !important;
+  border-radius: 0;
+}
+
+/* 플로팅 포맷 툴바 — 얇은 테두리, 무거운 회색 박스 없음 */
+.notion-editor .bn-formatting-toolbar,
+.notion-editor .bn-link-toolbar {
+  gap: 0.125rem;
+  padding: 0.25rem;
+  background: color-mix(in srgb, var(--bg-elevated) 94%, transparent);
+  border: 1px solid color-mix(in srgb, var(--divider) 55%, transparent);
+  border-radius: 0.75rem;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.28);
+  backdrop-filter: blur(12px);
+}
+
+.notion-editor .bn-toolbar .bn-button,
+.notion-editor .bn-toolbar .mantine-Button-root {
+  min-width: 1.75rem;
+  min-height: 1.75rem;
+  padding: 0.25rem;
+  border-radius: 0.5rem;
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  transition: color 0.15s, background 0.15s;
+}
+
+.notion-editor .bn-toolbar .bn-button:hover,
+.notion-editor .bn-toolbar .mantine-Button-root:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text);
+}
+
+.notion-editor .bn-toolbar .bn-button[data-selected="true"],
+.notion-editor .bn-toolbar .mantine-Button-root[data-selected="true"] {
+  background: rgba(255, 255, 255, 0.12);
+  color: var(--text);
+}
+
+/* 인라인 코드 — 가벼운 스타일 */
+.notion-editor .bn-inline-content code {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.9em;
+  padding: 0.1em 0.35em;
+  border-radius: 0.3rem;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text);
+  border: none;
+}
+
+/* 하이라이트(배경색) 인라인 스타일 */
+.notion-editor .bn-inline-content [data-background-color] {
+  border-radius: 0.2em;
+  padding: 0.05em 0.15em;
 }
 
 .notion-editor .bn-editor,

@@ -107,6 +107,25 @@
 
 .doc-prose em {
   color: var(--text-secondary);
+  font-style: italic;
+}
+
+.doc-prose u {
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
+
+.doc-prose del,
+.doc-prose s {
+  text-decoration: line-through;
+  color: var(--text-secondary);
+}
+
+.doc-prose mark {
+  border-radius: 0.2em;
+  padding: 0.05em 0.2em;
+  background: rgba(255, 214, 102, 0.28);
+  color: inherit;
 }
 
 .doc-prose blockquote {

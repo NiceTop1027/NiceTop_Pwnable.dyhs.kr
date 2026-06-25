@@ -1,10 +1,12 @@
 "use client";
 
-import "@blocknote/react/style.css";
+import "@blocknote/mantine/style.css";
 import type { PartialBlock } from "@blocknote/core";
 import { ko } from "@blocknote/core/locales";
-import { BlockNoteViewRaw, useCreateBlockNote } from "@blocknote/react";
+import { BlockNoteView } from "@blocknote/mantine";
+import { FormattingToolbarController, useCreateBlockNote } from "@blocknote/react";
 import { useCallback } from "react";
+import { DocumentFormattingToolbar } from "./DocumentFormattingToolbar";
 
 type NotionEditorProps = {
   initialContent?: PartialBlock[] | null;
@@ -35,15 +37,24 @@ export function NotionEditor({
 
   return (
     <div className="notion-editor">
-      <BlockNoteViewRaw
+      <BlockNoteView
         editor={editor}
         theme="dark"
         editable={editable}
         onChange={handleChange}
         sideMenu={editable}
-        formattingToolbar={editable}
         slashMenu={editable}
-      />
+        linkToolbar={editable}
+        formattingToolbar={false}
+        emojiPicker={false}
+        comments={false}
+      >
+        {editable && (
+          <FormattingToolbarController
+            formattingToolbar={DocumentFormattingToolbar}
+          />
+        )}
+      </BlockNoteView>
     </div>
   );
 }
