@@ -34,7 +34,7 @@ const partners: Partner[] = [
   {
     name: "플럭스웨어",
     logo: "/partners/fluxware-logo.png",
-    href: "https://fluxware.co.kr",
+    href: "https://fluxwear.co.kr",
   },
 ];
 
