@@ -35,8 +35,14 @@ body {
 }
 
 ::selection {
-  background: rgba(255, 255, 255, 0.2);
-  color: #fff;
+  background: rgba(255, 255, 255, 0.18);
+  color: var(--text);
+}
+
+.btn-fill::selection,
+.btn-fill *::selection {
+  background: rgba(0, 0, 0, 0.88);
+  color: #f5f5f7;
 }
 
 a {
@@ -141,6 +147,7 @@ a {
   cursor: pointer;
   transition: opacity 0.2s ease;
   white-space: nowrap;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .btn-fill:hover:not(:disabled) {
