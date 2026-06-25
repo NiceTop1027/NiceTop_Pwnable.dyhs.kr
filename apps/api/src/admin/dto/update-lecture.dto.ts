@@ -1,9 +1,13 @@
+import { Type } from 'class-transformer';
 import {
+  IsArray,
   IsBoolean,
   IsOptional,
   IsString,
   MinLength,
+  ValidateNested,
 } from 'class-validator';
+import { LecturePageInputDto } from './lecture-page.dto';
 
 export class UpdateLectureDto {
   @IsOptional()
@@ -30,4 +34,10 @@ export class UpdateLectureDto {
   @IsOptional()
   @IsBoolean()
   isPublished?: boolean;
+
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => LecturePageInputDto)
+  pages?: LecturePageInputDto[];
 }

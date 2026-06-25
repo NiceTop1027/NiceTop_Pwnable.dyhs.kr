@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { adminApi } from "@/lib/api";
 import { createOnce } from "@/lib/create-once";
-import { getAccessToken, useAuth } from "@/providers/AuthProvider";
+import { useAuth  } from "@/providers/AuthProvider";
 
 export default function AdminChallengeNewPage() {
   const router = useRouter();
@@ -13,14 +13,8 @@ export default function AdminChallengeNewPage() {
   useEffect(() => {
     if (isLoading || !user) return;
 
-    const token = getAccessToken();
-    if (!token) {
-      router.replace("/admin/challenges");
-      return;
-    }
-
     createOnce("admin:challenge:new", () =>
-      adminApi.createChallenge(token, {
+      adminApi.createChallenge( {
         title: "제목 없음",
         description: "",
         category: "PWN",

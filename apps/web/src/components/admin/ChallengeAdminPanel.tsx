@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { adminApi } from "@/lib/api";
 import { calcChallengeXp } from "@/lib/challenge-xp";
-import { getAccessToken, useAuth } from "@/providers/AuthProvider";
+import { useAuth  } from "@/providers/AuthProvider";
 import { AdminBadge } from "./ui/AdminBadge";
 import { AdminButton } from "./ui/AdminButton";
 import { AdminCard } from "./ui/AdminCard";
@@ -29,9 +29,7 @@ export function ChallengeAdminPanel() {
   const [error, setError] = useState<string | null>(null);
 
   async function load() {
-    const token = getAccessToken();
-    if (!token) return;
-    const data = (await adminApi.challenges(token)) as ChallengeRow[];
+    const data = (await adminApi.challenges()) as ChallengeRow[];
     setItems(data);
     setError(null);
   }
@@ -49,9 +47,7 @@ export function ChallengeAdminPanel() {
   }, [authLoading, user]);
 
   async function togglePublish(item: ChallengeRow) {
-    const token = getAccessToken();
-    if (!token) return;
-    await adminApi.updateChallenge(token, item.id, {
+    await adminApi.updateChallenge( item.id, {
       isPublished: !item.isPublished,
     });
     await load();
@@ -59,9 +55,7 @@ export function ChallengeAdminPanel() {
 
   async function remove(id: string) {
     if (!confirm("이 문제를 삭제할까요?")) return;
-    const token = getAccessToken();
-    if (!token) return;
-    await adminApi.deleteChallenge(token, id);
+    await adminApi.deleteChallenge( id);
     await load();
   }
 

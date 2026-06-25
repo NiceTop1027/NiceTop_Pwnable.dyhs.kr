@@ -1,5 +1,6 @@
 import PageHeader from "@/components/ui/PageHeader";
 import { FadeIn } from "@/components/pages/FadeIn";
+import { UserProfileLink } from "@/components/user/UserProfileLink";
 import { api } from "@/lib/api";
 
 export const metadata = { title: "랭킹" };
@@ -36,10 +37,10 @@ export default async function RankingPage() {
           {ranking.length > 0 ? (
             ranking.map((user) => (
               <div key={user.id} className="feature-row flex items-center gap-6">
-                <span className="text-caption w-8">{user.rank}</span>
-                <span className="flex-1 text-[1.0625rem] text-[var(--text)]">
-                  {user.displayName ?? user.username}
-                </span>
+                <span className="text-caption w-8 shrink-0">{user.rank}</span>
+                <div className="min-w-0 flex-1">
+                  <UserProfileLink user={user} size="sm" />
+                </div>
                 <span className="text-caption">{user.score.toLocaleString()} XP</span>
                 <span className="text-caption">Lv.{user.level}</span>
                 <span className="text-caption">{user._count.solves} solved</span>

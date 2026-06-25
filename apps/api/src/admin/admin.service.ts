@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   ConflictException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -11,11 +12,17 @@ import { randomBytes } from 'crypto';
 import { Prisma, Role } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { AdminLogService } from './admin-log.service';
+import { sanitizeImageBuffer } from '../common/utils/sanitize-image';
 import { slugify } from '../common/utils/slug';
 import { CreateChallengeDto } from './dto/create-challenge.dto';
 import { UpdateChallengeDto } from './dto/update-challenge.dto';
 import { CreateLectureDto } from './dto/create-lecture.dto';
+import { LecturePageInputDto } from './dto/lecture-page.dto';
 import { UpdateLectureDto } from './dto/update-lecture.dto';
+import {
+  ensureLecturePages,
+  uniquePageSlug,
+} from '../lectures/lecture-pages.util';
 import { CreateNoticeDto } from './dto/create-notice.dto';
 import { UpdateNoticeDto } from './dto/update-notice.dto';
 import { CreateCurriculumDto } from './dto/create-curriculum.dto';
@@ -75,8 +82,16 @@ export class AdminService {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user) throw new NotFoundException('User not found');
 
+    if (dto.role === Role.OWNER && user.role !== Role.OWNER) {
+      throw new ForbiddenException('Cannot assign OWNER role via API');
+    }
+
     if (user.role === Role.OWNER && dto.role && dto.role !== Role.OWNER) {
       throw new ConflictException('Cannot demote owner account');
+    }
+
+    if (user.role === Role.OWNER && dto.isActive === false) {
+      throw new ForbiddenException('Cannot suspend owner account');
     }
 
     const updated = await this.prisma.user.update({
@@ -125,6 +140,7 @@ export class AdminService {
 
   async createLecture(adminId: string, dto: CreateLectureDto) {
     const slug = await this.uniqueLectureSlug(dto.slug ?? slugify(dto.title));
+    const content = dto.content ?? '';
     const lecture = await this.prisma.lecture.create({
       data: {
         categoryId: dto.categoryId,
@@ -134,8 +150,16 @@ export class AdminService {
         versions: {
           create: {
             version: 1,
-            content: dto.content ?? '',
+            content,
             isPublished: dto.isPublished ?? false,
+          },
+        },
+        pages: {
+          create: {
+            title: '시작하기',
+            slug: 'start',
+            content,
+            order: 0,
           },
         },
       },
@@ -165,6 +189,11 @@ export class AdminService {
     }
 
     const version = lecture.versions[0];
+    const pages = await ensureLecturePages(
+      this.prisma,
+      lecture.id,
+      version?.content ?? '',
+    );
 
     return {
       id: lecture.id,
@@ -173,11 +202,78 @@ export class AdminService {
       description: lecture.description,
       categoryId: lecture.categoryId,
       category: lecture.category,
-      content: version?.content ?? '',
+      content: pages[0]?.content ?? version?.content ?? '',
+      pages,
       isPublished: version?.isPublished ?? false,
       version: version?.version ?? 0,
       updatedAt: lecture.updatedAt,
     };
+  }
+
+  private async syncLecturePages(
+    lectureId: string,
+    pages: LecturePageInputDto[],
+  ) {
+    if (pages.length === 0) {
+      throw new BadRequestException('At least one page is required');
+    }
+
+    const existing = await this.prisma.lecturePage.findMany({
+      where: { lectureId },
+      select: { id: true },
+    });
+    const keepIds = new Set<string>();
+
+    for (const [index, page] of pages.entries()) {
+      const title = page.title.trim() || '제목 없음';
+      const order = page.order ?? index;
+
+      if (page.id) {
+        const pageSlug = await uniquePageSlug(
+          this.prisma,
+          lectureId,
+          page.slug ?? title,
+          page.id,
+        );
+        await this.prisma.lecturePage.update({
+          where: { id: page.id },
+          data: {
+            title,
+            slug: pageSlug,
+            content: page.content,
+            order,
+          },
+        });
+        keepIds.add(page.id);
+        continue;
+      }
+
+      const pageSlug = await uniquePageSlug(
+        this.prisma,
+        lectureId,
+        page.slug ?? title,
+      );
+      const created = await this.prisma.lecturePage.create({
+        data: {
+          lectureId,
+          title,
+          slug: pageSlug,
+          content: page.content,
+          order,
+        },
+      });
+      keepIds.add(created.id);
+    }
+
+    const deleteIds = existing
+      .map((page) => page.id)
+      .filter((id) => !keepIds.has(id));
+
+    if (deleteIds.length > 0) {
+      await this.prisma.lecturePage.deleteMany({
+        where: { id: { in: deleteIds } },
+      });
+    }
   }
 
   async updateLecture(adminId: string, id: string, dto: UpdateLectureDto) {
@@ -212,8 +308,27 @@ export class AdminService {
     });
 
     const latest = lecture.versions[0];
-    const content = dto.content ?? latest?.content ?? '';
+    let content = dto.content ?? latest?.content ?? '';
     const isPublished = dto.isPublished ?? latest?.isPublished ?? false;
+
+    if (dto.pages) {
+      await this.syncLecturePages(id, dto.pages);
+      const firstPage = [...dto.pages].sort((a, b) => a.order - b.order)[0];
+      content = firstPage?.content ?? content;
+    } else {
+      const pages = await ensureLecturePages(
+        this.prisma,
+        id,
+        latest?.content ?? '',
+      );
+      if (dto.content !== undefined && pages[0]) {
+        await this.prisma.lecturePage.update({
+          where: { id: pages[0].id },
+          data: { content: dto.content },
+        });
+        content = dto.content;
+      }
+    }
 
     if (latest) {
       await this.prisma.lectureVersion.update({
@@ -631,24 +746,15 @@ export class AdminService {
       throw new BadRequestException('No file uploaded');
     }
 
-    const extByMime: Record<string, string> = {
-      'image/jpeg': '.jpg',
-      'image/png': '.png',
-      'image/webp': '.webp',
-      'image/gif': '.gif',
-    };
-    const ext = extByMime[file.mimetype];
-    if (!ext) {
-      throw new BadRequestException('Only JPEG, PNG, WebP, and GIF are allowed');
-    }
+    const sanitized = await sanitizeImageBuffer(file.buffer, 5 * 1024 * 1024);
 
     const dir = join(process.cwd(), 'uploads', 'content');
     if (!existsSync(dir)) {
       mkdirSync(dir, { recursive: true });
     }
 
-    const filename = `${randomBytes(16).toString('hex')}${ext}`;
-    writeFileSync(join(dir, filename), file.buffer);
+    const filename = `${randomBytes(24).toString('hex')}${sanitized.extension}`;
+    writeFileSync(join(dir, filename), sanitized.buffer);
 
     const url = `/api/uploads/content/${filename}`;
 

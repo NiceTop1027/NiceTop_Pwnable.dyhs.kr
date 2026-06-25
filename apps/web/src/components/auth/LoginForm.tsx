@@ -1,8 +1,11 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { motion } from "framer-motion";
+import { useRouter, useSearchParams } from "next/navigation";
+import { getSafeRedirectPath } from "@/lib/auth-redirect";
 import { Lock, User } from "lucide-react";
+import { authFormItem, authFormStagger } from "@/components/auth/auth-motion";
 import { Button } from "@/components/ui/Button";
 import { useAuth } from "@/providers/AuthProvider";
 import { ApiError } from "@/lib/api";
@@ -17,6 +20,8 @@ import { AuthAlert } from "@/components/auth/AuthAlert";
 export function LoginForm() {
   const { login } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectTo = getSafeRedirectPath(searchParams.get("next"));
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [touched, setTouched] = useState({ username: false, password: false });
@@ -48,7 +53,7 @@ export function LoginForm() {
 
     try {
       await login(values.username, values.password);
-      router.push("/profile");
+      router.push(redirectTo);
       router.refresh();
     } catch (err) {
       const message =
@@ -62,54 +67,73 @@ export function LoginForm() {
   }
 
   return (
-    <form className="auth-form" onSubmit={handleSubmit} noValidate>
-      <AuthAlert message={error} />
+    <motion.form
+      className="auth-form"
+      onSubmit={handleSubmit}
+      noValidate
+      variants={authFormStagger}
+      initial="hidden"
+      animate="show"
+      whileInView="show"
+      viewport={{ once: true, amount: 0.12, margin: "0px 0px -24px 0px" }}
+    >
+      <motion.div variants={authFormItem}>
+        <AuthAlert message={error} />
+      </motion.div>
 
-      <AuthField
-        label="아이디"
-        name="username"
-        type="text"
-        autoComplete="username"
-        placeholder="아이디 입력"
-        icon={<User className="h-4 w-4" strokeWidth={1.5} />}
-        value={values.username}
-        error={fieldErrors.username}
-        onChange={(e) => setValues((v) => ({ ...v, username: e.target.value }))}
-        onBlur={() => setTouched((t) => ({ ...t, username: true }))}
-      />
+      <motion.div variants={authFormItem}>
+        <AuthField
+          label="아이디"
+          name="username"
+          type="text"
+          autoComplete="username"
+          placeholder="아이디 입력"
+          icon={<User className="h-4 w-4" strokeWidth={1.5} />}
+          value={values.username}
+          error={fieldErrors.username}
+          onChange={(e) => setValues((v) => ({ ...v, username: e.target.value }))}
+          onBlur={() => setTouched((t) => ({ ...t, username: true }))}
+        />
+      </motion.div>
 
-      <AuthField
-        label="비밀번호"
-        name="password"
-        type="password"
-        autoComplete="current-password"
-        placeholder="비밀번호 입력"
-        icon={<Lock className="h-4 w-4" strokeWidth={1.5} />}
-        value={values.password}
-        error={fieldErrors.password}
-        onChange={(e) => setValues((v) => ({ ...v, password: e.target.value }))}
-        onBlur={() => setTouched((t) => ({ ...t, password: true }))}
-      />
+      <motion.div variants={authFormItem}>
+        <AuthField
+          label="비밀번호"
+          name="password"
+          type="password"
+          autoComplete="current-password"
+          placeholder="비밀번호 입력"
+          icon={<Lock className="h-4 w-4" strokeWidth={1.5} />}
+          value={values.password}
+          error={fieldErrors.password}
+          onChange={(e) => setValues((v) => ({ ...v, password: e.target.value }))}
+          onBlur={() => setTouched((t) => ({ ...t, password: true }))}
+        />
+      </motion.div>
 
-      <p className="auth-hint">
+      <motion.p variants={authFormItem} className="auth-hint">
         로그인 8회 실패 시 15분간 시도가 제한됩니다.
-      </p>
+      </motion.p>
 
-      <Button
-        variant="fill"
-        type="submit"
-        className="auth-submit"
-        disabled={loading}
-      >
-        {loading ? (
-          <span className="auth-submit-loading">
-            <span className="auth-spinner" />
-            로그인 중…
-          </span>
-        ) : (
-          "로그인"
-        )}
-      </Button>
-    </form>
+      <motion.div variants={authFormItem}>
+        <motion.div whileTap={{ scale: loading ? 1 : 0.985 }}>
+          <Button
+            variant="fill"
+            type="submit"
+            className="auth-submit"
+            disabled={loading}
+          >
+            {loading ? (
+              <span className="auth-submit-loading">
+                <span className="auth-spinner" />
+                로그인 중…
+              </span>
+            ) : (
+              "로그인"
+            )}
+          </Button>
+        </motion.div>
+      </motion.div>
+    </motion.form>
   );
 }

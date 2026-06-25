@@ -8,8 +8,7 @@ export default async function CurriculumPage() {
   let tracks: CurriculumTrack[] = [];
 
   try {
-    const curricula = await api.curricula();
-    tracks = mapCurriculaToTracks(curricula);
+    tracks = mapCurriculaToTracks(await api.curricula());
   } catch {
     tracks = [];
   }

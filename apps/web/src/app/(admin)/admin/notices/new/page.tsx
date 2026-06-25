@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { adminApi } from "@/lib/api";
 import { createOnce } from "@/lib/create-once";
-import { getAccessToken, useAuth } from "@/providers/AuthProvider";
+import { useAuth  } from "@/providers/AuthProvider";
 
 export default function AdminNoticeNewPage() {
   const router = useRouter();
@@ -13,14 +13,8 @@ export default function AdminNoticeNewPage() {
   useEffect(() => {
     if (isLoading || !user) return;
 
-    const token = getAccessToken();
-    if (!token) {
-      router.replace("/admin/notices");
-      return;
-    }
-
     createOnce("admin:notice:new", () =>
-      adminApi.createNotice(token, {
+      adminApi.createNotice( {
         title: "제목 없음",
         content: "",
         isPinned: false,

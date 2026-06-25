@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { adminApi } from "@/lib/api";
-import { getAccessToken } from "@/providers/AuthProvider";
 import { AdminBadge } from "./ui/AdminBadge";
 import { AdminButton } from "./ui/AdminButton";
 import { AdminCard } from "./ui/AdminCard";
@@ -24,9 +23,7 @@ export function UsersAdminPanel() {
   const [loading, setLoading] = useState(true);
 
   async function load() {
-    const token = getAccessToken();
-    if (!token) return;
-    setUsers((await adminApi.users(token)) as UserRow[]);
+    setUsers((await adminApi.users()) as UserRow[]);
   }
 
   useEffect(() => {
@@ -36,16 +33,12 @@ export function UsersAdminPanel() {
   }, []);
 
   async function updateRole(id: string, role: string) {
-    const token = getAccessToken();
-    if (!token) return;
-    await adminApi.updateUser(token, id, { role });
+    await adminApi.updateUser( id, { role });
     await load();
   }
 
   async function toggleActive(id: string, isActive: boolean) {
-    const token = getAccessToken();
-    if (!token) return;
-    await adminApi.updateUser(token, id, { isActive: !isActive });
+    await adminApi.updateUser( id, { isActive: !isActive });
     await load();
   }
 

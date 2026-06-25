@@ -4,7 +4,7 @@ import { FormEvent, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { LogOut, Shield } from "lucide-react";
 import { Button } from "@/components/ui/Button";
-import { useAuth, getAccessToken } from "@/providers/AuthProvider";
+import { useAuth } from "@/providers/AuthProvider";
 import { api, ApiError, type AuthUser } from "@/lib/api";
 import { scoreToLevel } from "@/lib/level";
 import {
@@ -18,6 +18,7 @@ import { AuthAlert } from "@/components/auth/AuthAlert";
 import { PasswordStrength } from "@/components/auth/PasswordStrength";
 import { ProfileAvatar } from "@/components/auth/ProfileAvatar";
 import { isStaffRole } from "@/lib/roles";
+import { LearningProgressList } from "@/components/lectures/LearningProgressList";
 
 type Tab = "overview" | "profile" | "security";
 
@@ -60,9 +61,7 @@ export function ProfileContent() {
 
   useEffect(() => {
     if (!user) return setStats(null);
-    const token = getAccessToken();
-    if (!token) return;
-    api.me(token).then((me) => setStats(me._count)).catch(() => setStats(null));
+    api.me().then((me) => setStats(me._count)).catch(() => setStats(null));
   }, [user]);
 
   useEffect(() => {
@@ -124,12 +123,9 @@ export function ProfileContent() {
     if (dnErr) return setProfileErr(dnErr);
     if (emErr) return setProfileErr(emErr);
 
-    const token = getAccessToken();
-    if (!token) return;
-
     setProfileLoading(true);
     try {
-      const updated = await api.updateProfile(token, {
+      const updated = await api.updateProfile( {
         displayName: profile.displayName.trim(),
         email: profile.email.trim(),
         bio: profile.bio.trim(),
@@ -162,12 +158,9 @@ export function ProfileContent() {
       return setSecurityErr("새 비밀번호는 현재와 달라야 합니다");
     }
 
-    const token = getAccessToken();
-    if (!token) return;
-
     setSecurityLoading(true);
     try {
-      await api.changePassword(token, {
+      await api.changePassword( {
         currentPassword: passwords.currentPassword,
         newPassword: passwords.newPassword,
       });
@@ -250,6 +243,11 @@ export function ProfileContent() {
                 </div>
               ))}
             </div>
+            <div className="profile-learning">
+              <h3 className="profile-learning-title">학습한 강의</h3>
+              <LearningProgressList />
+            </div>
+
             {user.bio && (
               <div className="profile-bio-box">
                 <span className="profile-stat-label">소개</span>

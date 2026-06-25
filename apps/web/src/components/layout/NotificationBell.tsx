@@ -11,7 +11,7 @@ import {
   markGuestNoticeRead,
   markGuestNoticesReadNow,
 } from "@/lib/notification-storage";
-import { getAccessToken, useAuth } from "@/providers/AuthProvider";
+import { useAuth  } from "@/providers/AuthProvider";
 
 function applyGuestReadState(summary: NotificationSummary): NotificationSummary {
   const lastReadAt = getGuestNoticeReadAt();
@@ -105,9 +105,7 @@ export function NotificationBell({ className = "" }: { className?: string }) {
     setLoading(true);
     try {
       if (user) {
-        const token = getAccessToken();
-        if (!token) return;
-        setSummary(await api.notifications(token));
+        setSummary(await api.notifications());
         return;
       }
 
@@ -152,9 +150,7 @@ export function NotificationBell({ className = "" }: { className?: string }) {
   async function handleMarkAllRead() {
     try {
       if (user) {
-        const token = getAccessToken();
-        if (!token) return;
-        await api.markAllNotificationsRead(token);
+        await api.markAllNotificationsRead();
       } else {
         markGuestNoticesReadNow();
       }
@@ -168,10 +164,7 @@ export function NotificationBell({ className = "" }: { className?: string }) {
     if (!item.isRead) {
       try {
         if (user) {
-          const token = getAccessToken();
-          if (token) {
-            await api.markNotificationRead(token, item.id);
-          }
+          await api.markNotificationRead(item.id);
         } else {
           markGuestNoticeRead(item.publishedAt);
         }

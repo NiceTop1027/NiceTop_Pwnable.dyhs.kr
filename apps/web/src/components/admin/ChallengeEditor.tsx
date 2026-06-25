@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { adminApi, type AdminChallenge } from "@/lib/api";
 import { blocksToMarkdown, parseMarkdownToBlocks } from "@/lib/blocknote-markdown";
-import { getAccessToken } from "@/providers/AuthProvider";
 import {
   DocumentEditorShell,
   type SaveState,
@@ -31,11 +30,9 @@ export function ChallengeEditor({ challengeId }: { challengeId: string }) {
   const [isDirty, setIsDirty] = useState(false);
 
   useEffect(() => {
-    const token = getAccessToken();
-    if (!token) return;
 
     adminApi
-      .getChallenge(token, challengeId)
+      .getChallenge( challengeId)
       .then((data) => {
         setChallenge(data);
         setTitle(data.title);
@@ -53,13 +50,12 @@ export function ChallengeEditor({ challengeId }: { challengeId: string }) {
   }, [challengeId]);
 
   const save = useCallback(async () => {
-    const token = getAccessToken();
-    if (!token || !challenge) return;
+    if (!challenge) return;
 
     setSaveState("saving");
     try {
       const description = blocksToMarkdown(blocks ?? []);
-      const updated = await adminApi.updateChallenge(token, challengeId, {
+      const updated = await adminApi.updateChallenge( challengeId, {
         title: title.trim() || "제목 없음",
         description,
         category,
@@ -103,9 +99,7 @@ export function ChallengeEditor({ challengeId }: { challengeId: string }) {
 
   async function handleDelete() {
     if (!confirm("이 문제를 삭제할까요?")) return;
-    const token = getAccessToken();
-    if (!token) return;
-    await adminApi.deleteChallenge(token, challengeId);
+    await adminApi.deleteChallenge( challengeId);
     router.push("/admin/challenges");
   }
 

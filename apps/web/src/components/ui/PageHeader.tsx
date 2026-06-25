@@ -1,5 +1,7 @@
 import type { LucideIcon } from "lucide-react";
 
+import { SITE_NAME } from "@/lib/site";
+
 interface PageHeaderProps {
   title: string;
   description?: string;
@@ -14,7 +16,7 @@ export default function PageHeader({
 }: PageHeaderProps) {
   return (
     <div className="mb-12">
-      <p className="text-eyebrow mb-3">pwnable.dyhs.kr</p>
+      <p className="text-eyebrow mb-3">{SITE_NAME}</p>
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h1 className="text-headline-sm">{title}</h1>

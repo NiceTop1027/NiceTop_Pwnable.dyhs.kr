@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRef } from "react";
 import { motion, useScroll, useTransform } from "framer-motion";
+import { useHydrated } from "@/lib/use-hydrated";
 
 const features = [
   { title: "커리큘럼", desc: "입문 · 중급 · 고급 단계별 학습 로드맵", href: "/curriculum" },
@@ -13,34 +14,34 @@ const features = [
 ];
 
 export function FeaturesSection() {
+  const hydrated = useHydrated();
   const ref = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({
     target: ref,
-    offset: ["start end", "end start"],
+    offset: ["start end", "start 0.4"],
   });
-  const opacity = useTransform(scrollYProgress, [0.1, 0.3], [0, 1]);
-  const y = useTransform(scrollYProgress, [0.1, 0.3], [40, 0]);
+  const headerOpacity = useTransform(scrollYProgress, [0, 1], [0, 1]);
+  const headerY = useTransform(scrollYProgress, [0, 1], [24, 0]);
 
   return (
-    <section ref={ref} className="bg-black px-6 py-32">
-      <div className="mx-auto max-w-[680px]">
-        <motion.div style={{ opacity, y }} className="mb-16 text-center">
+    <section ref={ref} className="home-section">
+      <div className="home-section-inner">
+        <motion.div
+          style={hydrated ? { opacity: headerOpacity, y: headerY } : undefined}
+          className="home-section-header"
+        >
           <p className="text-eyebrow mb-4">기능</p>
           <h2 className="text-headline-sm">필요한 모든 것</h2>
         </motion.div>
 
-        <div>
-          {features.map((f) => (
-            <Link key={f.title} href={f.href} className="feature-row group block">
-              <div className="flex items-baseline justify-between gap-4">
-                <h3 className="text-[1.75rem] font-semibold tracking-tight text-[var(--text)] transition-opacity group-hover:opacity-70">
-                  {f.title}
-                </h3>
-                <span className="text-body shrink-0 opacity-0 transition-opacity group-hover:opacity-100">
-                  더 알아보기 ›
-                </span>
+        <div className="feature-list">
+          {features.map((feature) => (
+            <Link key={feature.title} href={feature.href} className="feature-row group">
+              <div className="feature-row-main">
+                <h3 className="feature-row-title">{feature.title}</h3>
+                <p className="feature-row-desc">{feature.desc}</p>
               </div>
-              <p className="text-body">{f.desc}</p>
+              <span className="feature-row-action">더 알아보기</span>
             </Link>
           ))}
         </div>

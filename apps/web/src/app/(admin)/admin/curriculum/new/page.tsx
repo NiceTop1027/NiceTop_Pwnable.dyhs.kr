@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { adminApi } from "@/lib/api";
 import { createOnce } from "@/lib/create-once";
-import { getAccessToken, useAuth } from "@/providers/AuthProvider";
+import { useAuth  } from "@/providers/AuthProvider";
 
 export default function AdminCurriculumNewPage() {
   const router = useRouter();
@@ -13,20 +13,14 @@ export default function AdminCurriculumNewPage() {
   useEffect(() => {
     if (isLoading || !user) return;
 
-    const token = getAccessToken();
-    if (!token) {
-      router.replace("/admin/curriculum");
-      return;
-    }
-
     createOnce("admin:curriculum:new", async () => {
-      const categories = await adminApi.lectureCategories(token);
+      const categories = await adminApi.lectureCategories();
       const categoryId = categories[0]?.id;
       if (!categoryId) {
         throw new Error("No lecture categories");
       }
 
-      return adminApi.createLecture(token, {
+      return adminApi.createLecture( {
         categoryId,
         title: "제목 없음",
         content: "",

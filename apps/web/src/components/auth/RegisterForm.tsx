@@ -1,8 +1,12 @@
 "use client";
 
+import Link from "next/link";
 import { FormEvent, useState } from "react";
-import { useRouter } from "next/navigation";
+import { motion } from "framer-motion";
+import { useRouter, useSearchParams } from "next/navigation";
+import { getSafeRedirectPath } from "@/lib/auth-redirect";
 import { AtSign, Lock, Mail, User } from "lucide-react";
+import { authFormItem, authFormStagger } from "@/components/auth/auth-motion";
 import { Button } from "@/components/ui/Button";
 import { useAuth } from "@/providers/AuthProvider";
 import { ApiError } from "@/lib/api";
@@ -19,6 +23,8 @@ import { PasswordStrength } from "@/components/auth/PasswordStrength";
 export function RegisterForm() {
   const { register } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectTo = getSafeRedirectPath(searchParams.get("next"));
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [touched, setTouched] = useState({
@@ -79,7 +85,7 @@ export function RegisterForm() {
         email: values.email || undefined,
         displayName: values.displayName || undefined,
       });
-      router.push("/profile");
+      router.push(redirectTo);
       router.refresh();
     } catch (err) {
       const message =
@@ -93,48 +99,65 @@ export function RegisterForm() {
   }
 
   return (
-    <form className="auth-form" onSubmit={handleSubmit} noValidate>
-      <AuthAlert message={error} />
+    <motion.form
+      className="auth-form"
+      onSubmit={handleSubmit}
+      noValidate
+      variants={authFormStagger}
+      initial="hidden"
+      animate="show"
+      whileInView="show"
+      viewport={{ once: true, amount: 0.06, margin: "0px 0px -32px 0px" }}
+    >
+      <motion.div variants={authFormItem}>
+        <AuthAlert message={error} />
+      </motion.div>
 
-      <AuthField
-        label="아이디"
-        name="username"
-        type="text"
-        autoComplete="username"
-        placeholder="영문, 숫자, 밑줄(_)"
-        hint="3~20자 · 영문, 숫자, 밑줄(_)만 사용"
-        icon={<User className="h-4 w-4" strokeWidth={1.5} />}
-        value={values.username}
-        error={fieldErrors.username}
-        onChange={(e) => setValues((v) => ({ ...v, username: e.target.value }))}
-        onBlur={() => setTouched((t) => ({ ...t, username: true }))}
-      />
+      <motion.div variants={authFormItem}>
+        <AuthField
+          label="아이디"
+          name="username"
+          type="text"
+          autoComplete="username"
+          placeholder="영문, 숫자, 밑줄(_)"
+          hint="3~20자 · 영문, 숫자, 밑줄(_)만 사용"
+          icon={<User className="h-4 w-4" strokeWidth={1.5} />}
+          value={values.username}
+          error={fieldErrors.username}
+          onChange={(e) => setValues((v) => ({ ...v, username: e.target.value }))}
+          onBlur={() => setTouched((t) => ({ ...t, username: true }))}
+        />
+      </motion.div>
 
-      <AuthField
-        label="닉네임"
-        name="displayName"
-        type="text"
-        autoComplete="nickname"
-        placeholder="표시 이름 (선택)"
-        icon={<AtSign className="h-4 w-4" strokeWidth={1.5} />}
-        value={values.displayName}
-        onChange={(e) => setValues((v) => ({ ...v, displayName: e.target.value }))}
-      />
+      <motion.div variants={authFormItem}>
+        <AuthField
+          label="닉네임"
+          name="displayName"
+          type="text"
+          autoComplete="nickname"
+          placeholder="표시 이름 (선택)"
+          icon={<AtSign className="h-4 w-4" strokeWidth={1.5} />}
+          value={values.displayName}
+          onChange={(e) => setValues((v) => ({ ...v, displayName: e.target.value }))}
+        />
+      </motion.div>
 
-      <AuthField
-        label="이메일"
-        name="email"
-        type="email"
-        autoComplete="email"
-        placeholder="email@example.com (선택)"
-        icon={<Mail className="h-4 w-4" strokeWidth={1.5} />}
-        value={values.email}
-        error={fieldErrors.email}
-        onChange={(e) => setValues((v) => ({ ...v, email: e.target.value }))}
-        onBlur={() => setTouched((t) => ({ ...t, email: true }))}
-      />
+      <motion.div variants={authFormItem}>
+        <AuthField
+          label="이메일"
+          name="email"
+          type="email"
+          autoComplete="email"
+          placeholder="email@example.com (선택)"
+          icon={<Mail className="h-4 w-4" strokeWidth={1.5} />}
+          value={values.email}
+          error={fieldErrors.email}
+          onChange={(e) => setValues((v) => ({ ...v, email: e.target.value }))}
+          onBlur={() => setTouched((t) => ({ ...t, email: true }))}
+        />
+      </motion.div>
 
-      <div>
+      <motion.div variants={authFormItem}>
         <AuthField
           label="비밀번호"
           name="password"
@@ -148,38 +171,50 @@ export function RegisterForm() {
           onBlur={() => setTouched((t) => ({ ...t, password: true }))}
         />
         <PasswordStrength password={values.password} />
-      </div>
+      </motion.div>
 
-      <AuthField
-        label="비밀번호 확인"
-        name="confirmPassword"
-        type="password"
-        autoComplete="new-password"
-        placeholder="비밀번호 다시 입력"
-        icon={<Lock className="h-4 w-4" strokeWidth={1.5} />}
-        value={values.confirmPassword}
-        error={fieldErrors.confirmPassword}
-        onChange={(e) =>
-          setValues((v) => ({ ...v, confirmPassword: e.target.value }))
-        }
-        onBlur={() => setTouched((t) => ({ ...t, confirmPassword: true }))}
-      />
+      <motion.div variants={authFormItem}>
+        <AuthField
+          label="비밀번호 확인"
+          name="confirmPassword"
+          type="password"
+          autoComplete="new-password"
+          placeholder="비밀번호 다시 입력"
+          icon={<Lock className="h-4 w-4" strokeWidth={1.5} />}
+          value={values.confirmPassword}
+          error={fieldErrors.confirmPassword}
+          onChange={(e) =>
+            setValues((v) => ({ ...v, confirmPassword: e.target.value }))
+          }
+          onBlur={() => setTouched((t) => ({ ...t, confirmPassword: true }))}
+        />
+      </motion.div>
 
-      <Button
-        variant="fill"
-        type="submit"
-        className="auth-submit"
-        disabled={loading}
-      >
-        {loading ? (
-          <span className="auth-submit-loading">
-            <span className="auth-spinner" />
-            가입 중…
-          </span>
-        ) : (
-          "회원가입"
-        )}
-      </Button>
-    </form>
+      <motion.p variants={authFormItem} className="auth-legal-note">
+        회원가입 시{" "}
+        <Link href="/legal/terms">이용약관</Link> 및{" "}
+        <Link href="/legal/privacy">개인정보 처리방침</Link>에 동의하게 됩니다.
+      </motion.p>
+
+      <motion.div variants={authFormItem}>
+        <motion.div whileTap={{ scale: loading ? 1 : 0.985 }}>
+          <Button
+            variant="fill"
+            type="submit"
+            className="auth-submit"
+            disabled={loading}
+          >
+            {loading ? (
+              <span className="auth-submit-loading">
+                <span className="auth-spinner" />
+                가입 중…
+              </span>
+            ) : (
+              "회원가입"
+            )}
+          </Button>
+        </motion.div>
+      </motion.div>
+    </motion.form>
   );
 }

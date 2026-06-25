@@ -26,7 +26,11 @@ import { UpdateNoticeDto } from './dto/update-notice.dto';
 import { CreateCurriculumDto } from './dto/create-curriculum.dto';
 import { UpdateCurriculumDto } from './dto/update-curriculum.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { AddCurriculumItemDto } from './dto/add-curriculum-item.dto';
+import { ReorderCurriculumItemsDto } from './dto/reorder-curriculum-items.dto';
 import { UpdateCommunityPostDto } from './dto/update-community-post.dto';
+import { ContactService } from '../contact/contact.service';
+import { UpdateInquiryStatusDto } from '../contact/dto/update-inquiry-status.dto';
 
 @AdminRoles()
 @Controller('admin')
@@ -34,6 +38,7 @@ export class AdminController {
   constructor(
     private readonly adminService: AdminService,
     private readonly adminLogService: AdminLogService,
+    private readonly contactService: ContactService,
   ) {}
 
   @Get('stats')
@@ -44,6 +49,19 @@ export class AdminController {
   @Get('logs')
   getLogs() {
     return this.adminLogService.getRecent();
+  }
+
+  @Get('inquiries')
+  listInquiries() {
+    return this.contactService.listInquiries();
+  }
+
+  @Patch('inquiries/:id/status')
+  updateInquiryStatus(
+    @Param('id') id: string,
+    @Body() dto: UpdateInquiryStatusDto,
+  ) {
+    return this.contactService.updateStatus(id, dto.status);
   }
 
   @Get('users')
@@ -174,7 +192,7 @@ export class AdminController {
   addCurriculumItem(
     @CurrentUser() admin: { id: string },
     @Param('id') id: string,
-    @Body() body: { lectureId?: string; challengeId?: string },
+    @Body() body: AddCurriculumItemDto,
   ) {
     return this.adminService.addCurriculumItem(admin.id, id, body);
   }
@@ -192,7 +210,7 @@ export class AdminController {
   reorderCurriculumItems(
     @CurrentUser() admin: { id: string },
     @Param('id') id: string,
-    @Body() body: { itemIds: string[] },
+    @Body() body: ReorderCurriculumItemsDto,
   ) {
     return this.adminService.reorderCurriculumItems(admin.id, id, body.itemIds);
   }

@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Menu, X } from "lucide-react";
 import { mainNav } from "@/lib/navigation";
+import { SITE_NAME } from "@/lib/site";
 import { HeaderAuth } from "@/components/layout/HeaderAuth";
 import { NotificationBell } from "@/components/layout/NotificationBell";
 
@@ -37,7 +38,7 @@ export default function Header() {
           href="/"
           className="text-[1.0625rem] font-medium tracking-tight text-[var(--text)]"
         >
-          pwnable.dyhs.kr
+          {SITE_NAME}
         </Link>
 
         <nav className="hidden items-center gap-8 md:flex">

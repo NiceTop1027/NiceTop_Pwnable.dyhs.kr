@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { adminApi } from "@/lib/api";
-import { getAccessToken } from "@/providers/AuthProvider";
 import { AdminCard } from "@/components/admin/ui/AdminCard";
 import { AdminEmpty } from "@/components/admin/ui/AdminEmpty";
 import { AdminRow } from "@/components/admin/ui/AdminRow";
@@ -20,13 +19,8 @@ export default function AdminLogsPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const token = getAccessToken();
-    if (!token) {
-      setLoading(false);
-      return;
-    }
     adminApi
-      .logs(token)
+      .logs()
       .then((data) => setLogs(data as LogRow[]))
       .catch(() => setLogs([]))
       .finally(() => setLoading(false));

@@ -3,6 +3,7 @@ import {
   Bell,
   BookOpen,
   LayoutDashboard,
+  Mail,
   MessagesSquare,
   Puzzle,
   ScrollText,
@@ -52,6 +53,12 @@ export const adminNav: AdminNavItem[] = [
     label: "회원",
     icon: Users,
     description: "회원 권한과 계정 상태를 관리합니다",
+  },
+  {
+    href: "/admin/inquiries",
+    label: "문의",
+    icon: Mail,
+    description: "이용자 문의를 확인하고 처리합니다",
   },
   {
     href: "/admin/logs",

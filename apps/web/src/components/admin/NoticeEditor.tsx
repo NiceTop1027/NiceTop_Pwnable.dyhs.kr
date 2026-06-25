@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { adminApi, type AdminNotice } from "@/lib/api";
 import { blocksToMarkdown, parseMarkdownToBlocks } from "@/lib/blocknote-markdown";
-import { getAccessToken } from "@/providers/AuthProvider";
 import {
   DocumentEditorShell,
   type SaveState,
@@ -23,11 +22,9 @@ export function NoticeEditor({ noticeId }: { noticeId: string }) {
   const [isDirty, setIsDirty] = useState(false);
 
   useEffect(() => {
-    const token = getAccessToken();
-    if (!token) return;
 
     adminApi
-      .getNotice(token, noticeId)
+      .getNotice( noticeId)
       .then((data) => {
         setNotice(data);
         setTitle(data.title);
@@ -41,13 +38,12 @@ export function NoticeEditor({ noticeId }: { noticeId: string }) {
   }, [noticeId]);
 
   const save = useCallback(async () => {
-    const token = getAccessToken();
-    if (!token || !notice) return;
+    if (!notice) return;
 
     setSaveState("saving");
     try {
       const content = blocksToMarkdown(blocks ?? []);
-      const updated = await adminApi.updateNotice(token, noticeId, {
+      const updated = await adminApi.updateNotice( noticeId, {
         title: title.trim() || "제목 없음",
         content,
         isPinned,
@@ -74,9 +70,7 @@ export function NoticeEditor({ noticeId }: { noticeId: string }) {
 
   async function handleDelete() {
     if (!confirm("이 공지를 삭제할까요?")) return;
-    const token = getAccessToken();
-    if (!token) return;
-    await adminApi.deleteNotice(token, noticeId);
+    await adminApi.deleteNotice( noticeId);
     router.push("/admin/notices");
   }
 

@@ -15,18 +15,13 @@ import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
+import { sanitizeImageBuffer } from '../common/utils/sanitize-image';
+import { hashRefreshToken } from '../common/utils/refresh-token';
 
 const loginBuckets = new Map<string, { count: number; resetAt: number }>();
 
 const AVATAR_DIR = join(process.cwd(), 'uploads', 'avatars');
 const AVATAR_MAX_BYTES = 2 * 1024 * 1024;
-const AVATAR_MIME_TO_EXT: Record<string, string> = {
-  'image/jpeg': '.jpg',
-  'image/png': '.png',
-  'image/webp': '.webp',
-  'image/gif': '.gif',
-};
-
 const USER_SELECT = {
   id: true,
   username: true,
@@ -58,7 +53,7 @@ export class AuthService {
     });
 
     if (existing) {
-      throw new ConflictException('Username or email already exists');
+      throw new ConflictException('Registration failed');
     }
 
     const passwordHash = await argon2.hash(dto.password);
@@ -175,10 +170,7 @@ export class AuthService {
       throw new BadRequestException('File must be 2MB or smaller');
     }
 
-    const ext = AVATAR_MIME_TO_EXT[file.mimetype];
-    if (!ext) {
-      throw new BadRequestException('Only JPEG, PNG, WebP, and GIF are allowed');
-    }
+    const sanitized = await sanitizeImageBuffer(file.buffer, AVATAR_MAX_BYTES);
 
     const current = await this.prisma.user.findUnique({
       where: { id: userId },
@@ -191,9 +183,9 @@ export class AuthService {
 
     this.ensureAvatarDir();
 
-    const filename = `${userId}-${Date.now()}${ext}`;
+    const filename = `${randomBytes(24).toString('hex')}${sanitized.extension}`;
     const filepath = join(AVATAR_DIR, filename);
-    writeFileSync(filepath, file.buffer);
+    writeFileSync(filepath, sanitized.buffer);
 
     const avatarUrl = `/uploads/avatars/${filename}`;
 
@@ -249,10 +241,13 @@ export class AuthService {
     }
 
     const passwordHash = await argon2.hash(dto.newPassword);
-    await this.prisma.user.update({
-      where: { id: userId },
-      data: { passwordHash },
-    });
+    await this.prisma.$transaction([
+      this.prisma.user.update({
+        where: { id: userId },
+        data: { passwordHash },
+      }),
+      this.prisma.refreshToken.deleteMany({ where: { userId } }),
+    ]);
 
     return { success: true };
   }
@@ -284,8 +279,9 @@ export class AuthService {
   }
 
   async refresh(refreshToken: string) {
+    const tokenHash = hashRefreshToken(refreshToken);
     const stored = await this.prisma.refreshToken.findUnique({
-      where: { token: refreshToken },
+      where: { token: tokenHash },
       include: {
         user: {
           select: USER_SELECT,
@@ -309,7 +305,8 @@ export class AuthService {
 
   async logout(refreshToken?: string) {
     if (refreshToken) {
-      await this.prisma.refreshToken.deleteMany({ where: { token: refreshToken } });
+      const tokenHash = hashRefreshToken(refreshToken);
+      await this.prisma.refreshToken.deleteMany({ where: { token: tokenHash } });
     }
     return { success: true };
   }
@@ -345,13 +342,14 @@ export class AuthService {
 
   private async createRefreshToken(userId: string) {
     const token = randomBytes(48).toString('hex');
+    const tokenHash = hashRefreshToken(token);
     const expiresIn = this.configService.get<string>('JWT_REFRESH_EXPIRES', '7d');
     const expiresAt = this.parseExpiry(expiresIn);
 
     await this.prisma.refreshToken.create({
       data: {
         userId,
-        token,
+        token: tokenHash,
         expiresAt,
       },
     });

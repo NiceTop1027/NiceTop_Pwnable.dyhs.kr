@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 import { adminNav, getAdminPageMeta } from "@/lib/admin-nav";
+import { SITE_NAME } from "@/lib/site";
 import { useAuth } from "@/providers/AuthProvider";
 import { AdminPageHeader } from "./ui/AdminPageHeader";
 
@@ -47,7 +48,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
       <div className="admin-shell">
         <aside className="admin-sidebar">
           <Link href="/" className="admin-sidebar-brand">
-            pwnable.dyhs.kr
+            {SITE_NAME}
           </Link>
           <p className="admin-sidebar-eyebrow">관리 콘솔</p>
           <nav className="admin-sidebar-nav" aria-label="관리자 메뉴">

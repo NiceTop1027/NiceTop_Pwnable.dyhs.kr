@@ -3,6 +3,7 @@ import localFont from "next/font/local";
 import Header from "@/components/layout/Header";
 import { ConditionalFooter } from "@/components/layout/ConditionalFooter";
 import { AuthProvider } from "@/providers/AuthProvider";
+import { SITE_DESCRIPTION, SITE_NAME } from "@/lib/site";
 import "./globals.css";
 import "@/styles/content.css";
 
@@ -16,12 +17,11 @@ const pretendard = localFont({
 
 export const metadata: Metadata = {
   title: {
-    default: "pwnable.dyhs.kr",
-    template: "%s | pwnable.dyhs.kr",
+    default: SITE_NAME,
+    template: `%s | ${SITE_NAME}`,
   },
-  description:
-    "한국 학생을 위한 포너블 올인원 교육 플랫폼 — 강의, 워게임, CTF, 커뮤니티",
-  keywords: ["pwnable", "CTF", "해킹", "보안", "교육", "워게임", "포너블"],
+  description: SITE_DESCRIPTION,
+  keywords: ["NiceTop", "pwnable", "CTF", "해킹", "보안", "교육", "워게임", "포너블"],
 };
 
 export default function RootLayout({
@@ -30,7 +30,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ko" className={pretendard.variable}>
+    <html lang="ko" className={pretendard.variable} data-scroll-behavior="smooth">
       <body className="flex min-h-screen flex-col font-sans antialiased">
         <AuthProvider>
           <Header />

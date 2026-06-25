@@ -13,7 +13,6 @@ import { adminApi } from "@/lib/api";
 import { blockNoteDictionary } from "@/lib/blocknote-dictionary";
 import { documentBlockNoteSchema } from "@/lib/blocknote-schema";
 import { resolveMediaUrl } from "@/lib/media";
-import { getAccessToken } from "@/providers/AuthProvider";
 import { DocumentFormattingToolbar } from "./DocumentFormattingToolbar";
 import { DocumentSideMenu } from "./DocumentSideMenu";
 
@@ -36,12 +35,8 @@ export function NotionEditor({
       : defaultBlocks;
 
   const uploadFile = useCallback(async (file: File) => {
-    const token = getAccessToken();
-    if (!token) {
-      throw new Error("로그인이 필요합니다");
-    }
 
-    const { url } = await adminApi.uploadContentImage(token, file);
+    const { url } = await adminApi.uploadContentImage( file);
     return {
       props: {
         name: file.name,

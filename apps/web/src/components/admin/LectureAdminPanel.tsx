@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { adminApi } from "@/lib/api";
-import { getAccessToken, useAuth } from "@/providers/AuthProvider";
+import { useAuth  } from "@/providers/AuthProvider";
 import { AdminBadge } from "./ui/AdminBadge";
 import { AdminButton } from "./ui/AdminButton";
 import { AdminCard } from "./ui/AdminCard";
@@ -26,9 +26,7 @@ export function LectureAdminPanel() {
   const [error, setError] = useState<string | null>(null);
 
   async function load() {
-    const token = getAccessToken();
-    if (!token) return;
-    const list = await adminApi.lectures(token);
+    const list = await adminApi.lectures();
     setLectures(list as LectureRow[]);
     setError(null);
   }
@@ -47,9 +45,7 @@ export function LectureAdminPanel() {
 
   async function remove(id: string) {
     if (!confirm("이 문서를 삭제할까요?")) return;
-    const token = getAccessToken();
-    if (!token) return;
-    await adminApi.deleteLecture(token, id);
+    await adminApi.deleteLecture( id);
     await load();
   }
 

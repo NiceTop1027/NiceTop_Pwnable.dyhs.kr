@@ -10,6 +10,7 @@ type Partner = {
   href?: string;
   textOnly?: boolean;
   logoSize?: "default" | "wide";
+  logoClassName?: string;
 };
 
 const partners: Partner[] = [
@@ -29,6 +30,7 @@ const partners: Partner[] = [
     role: "덕영고 협력기관",
     logo: "/partners/teamh4c-logo.svg",
     logoSize: "wide",
+    logoClassName: "h-12 sm:h-14",
     href: "https://h4c.team",
   },
   {
@@ -50,7 +52,7 @@ function PartnerItem({ partner }: { partner: Partner }) {
         <img
           src={partner.logo}
           alt={`${partner.name} 로고`}
-          className="h-16 w-auto shrink-0 opacity-80 transition-opacity duration-300 group-hover:opacity-100 sm:h-20"
+          className={`${partner.logoClassName ?? "h-14 w-auto sm:h-16"} shrink-0 opacity-80 transition-opacity duration-300 group-hover:opacity-100`}
         />
       ) : (
         <div className="relative h-14 w-14 shrink-0 sm:h-16 sm:w-16">
@@ -101,7 +103,7 @@ export function PartnersSection() {
   const track = [...partners, ...partners];
 
   return (
-    <section className="border-y border-[var(--divider)] bg-black py-16">
+    <section className="home-section home-section--partners">
       <p className="text-eyebrow mb-10 text-center">협력</p>
 
       <div className="partners-marquee-mask relative overflow-hidden">

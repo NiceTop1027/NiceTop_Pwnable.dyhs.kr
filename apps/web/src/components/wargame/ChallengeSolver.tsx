@@ -4,7 +4,6 @@ import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import { api, ApiError, type ChallengeDetail } from "@/lib/api";
 import { useAuth } from "@/providers/AuthProvider";
-import { getAccessToken } from "@/providers/AuthProvider";
 import { Button } from "@/components/ui/Button";
 import { translateApiError } from "@/lib/auth-validation";
 
@@ -22,17 +21,12 @@ export function ChallengeSolver({
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    const token = getAccessToken();
-    if (!token) {
-      setMessage("로그인 후 제출할 수 있습니다");
-      return;
-    }
 
     setLoading(true);
     setMessage("");
 
     try {
-      const res = await api.submitFlag(challenge.slug, flag, token);
+      const res = await api.submitFlag(challenge.slug, flag);
       setSuccess(true);
       setMessage(
         res.isFirstBlood

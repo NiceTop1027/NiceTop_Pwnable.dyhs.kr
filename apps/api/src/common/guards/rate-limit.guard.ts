@@ -1,41 +1,32 @@
+import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
+import { Reflector } from '@nestjs/core';
 import {
-  CanActivate,
-  ExecutionContext,
-  HttpException,
-  HttpStatus,
-  Injectable,
-} from '@nestjs/common';
-
-type Bucket = { count: number; resetAt: number };
+  RATE_LIMIT_KEY,
+  type RateLimitOptions,
+} from '../decorators/rate-limit.decorator';
+import { RateLimitService } from '../services/rate-limit.service';
 
 @Injectable()
 export class RateLimitGuard implements CanActivate {
-  private readonly buckets = new Map<string, Bucket>();
-
   constructor(
-    private readonly limit = 10,
-    private readonly windowMs = 60_000,
+    private readonly reflector: Reflector,
+    private readonly rateLimit: RateLimitService,
   ) {}
 
-  canActivate(context: ExecutionContext): boolean {
+  async canActivate(context: ExecutionContext): Promise<boolean> {
+    const meta = this.reflector.getAllAndOverride<RateLimitOptions | undefined>(
+      RATE_LIMIT_KEY,
+      [context.getHandler(), context.getClass()],
+    );
+
+    if (!meta) return true;
+
     const req = context.switchToHttp().getRequest();
-    const key = `${req.ip}:${req.route?.path ?? req.url}`;
-    const now = Date.now();
-    const bucket = this.buckets.get(key);
+    const ip = req.ip ?? req.socket?.remoteAddress ?? 'unknown';
+    const path = req.route?.path ?? req.url ?? 'unknown';
+    const key = `${ip}:${path}`;
 
-    if (!bucket || bucket.resetAt < now) {
-      this.buckets.set(key, { count: 1, resetAt: now + this.windowMs });
-      return true;
-    }
-
-    if (bucket.count >= this.limit) {
-      throw new HttpException(
-        'Too many requests. Please try again later',
-        HttpStatus.TOO_MANY_REQUESTS,
-      );
-    }
-
-    bucket.count += 1;
+    await this.rateLimit.consume(key, meta.limit, meta.windowMs);
     return true;
   }
 }

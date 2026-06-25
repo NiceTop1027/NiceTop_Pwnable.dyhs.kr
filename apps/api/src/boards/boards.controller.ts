@@ -10,6 +10,7 @@ import {
   Req,
 } from '@nestjs/common';
 import type { Request } from 'express';
+import { parsePositiveInt } from '../common/utils/pagination';
 import { Public } from '../common/decorators/public.decorator';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { BoardsService } from './boards.service';
@@ -37,8 +38,8 @@ export class BoardsController {
   ) {
     return this.boardsService.getPosts(
       slug,
-      page ? parseInt(page, 10) : 1,
-      limit ? parseInt(limit, 10) : 20,
+      parsePositiveInt(page, 1, 10_000),
+      parsePositiveInt(limit, 20, 100),
     );
   }
 

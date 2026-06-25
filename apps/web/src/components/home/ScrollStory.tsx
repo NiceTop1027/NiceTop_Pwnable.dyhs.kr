@@ -23,12 +23,20 @@ const chapters = [
 
 export function ScrollStory() {
   return (
-    <div className="bg-black">
+    <div>
       <ScrollPinSequence items={chapters} height="500vh" />
 
       <ScrollPinStatement
         eyebrow="올인원 플랫폼"
-        headline="DreamHack · pwn.college · CTFd"
+        headline={
+          <>
+            <span>DreamHack</span>
+            <span aria-hidden>·</span>
+            <span>pwn.college</span>
+            <span aria-hidden>·</span>
+            <span>CTFd</span>
+          </>
+        }
         body="세 가지 플랫폼의 장점을 하나로 — 강의는 pwn.college처럼, 실습은 DreamHack처럼, 대회는 CTFd처럼"
         height="280vh"
       />

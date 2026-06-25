@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import {
   motion,
   useMotionValueEvent,
@@ -13,6 +13,8 @@ interface SequenceItem {
   headline: string;
   subline: string;
 }
+
+const CHAPTER_MOODS = ["lecture", "wargame", "ctf", "community"] as const;
 
 function ChapterBackdrop({
   index,
@@ -34,9 +36,12 @@ function ChapterBackdrop({
     [start, peak, end, fadeOut],
     [0, 1, 0.85, 0],
   );
+  const moodScale = useTransform(scrollYProgress, [start, peak, end], [1.06, 1, 1.02]);
+  const mood = CHAPTER_MOODS[index] ?? "lecture";
 
   return (
-    <motion.div style={{ opacity }} className="scroll-chapter-backdrop" aria-hidden>
+    <motion.div style={{ opacity, scale: moodScale }} className="scroll-chapter-backdrop" aria-hidden>
+      <span className={`scroll-chapter-mood scroll-chapter-mood--${mood}`} />
       <span className="scroll-chapter-index">{String(index + 1).padStart(2, "0")}</span>
     </motion.div>
   );
@@ -65,12 +70,12 @@ function SequenceSlide({
     [start, peak, end, fadeOut],
     [0, 1, 1, 0],
   );
-  const y = useTransform(scrollYProgress, [start, peak, end], [60, 0, -30]);
-  const scale = useTransform(scrollYProgress, [start, peak, end], [0.92, 1, 0.96]);
+  const y = useTransform(scrollYProgress, [start, peak, end], [28, 0, -10]);
+  const scale = useTransform(scrollYProgress, [start, peak, end, fadeOut], [0.94, 1, 1, 0.97]);
   const blur = useTransform(
     scrollYProgress,
     [start, peak, end, fadeOut],
-    [10, 0, 0, 8],
+    [8, 0, 0, 6],
   );
   const filter = useTransform(blur, (v) => `blur(${v}px)`);
   const labelOpacity = useTransform(scrollYProgress, [start, peak, hold], [0, 1, 1]);
@@ -84,10 +89,10 @@ function SequenceSlide({
         className="absolute inset-0 z-10 flex flex-col items-center justify-center px-6 text-center"
       >
         <motion.p style={{ opacity: labelOpacity, y: labelY }} className="scroll-section-label mb-5">
-          Chapter {String(index + 1).padStart(2, "0")}
+          챕터 {String(index + 1).padStart(2, "0")}
         </motion.p>
-        <h2 className="text-headline">{item.headline}</h2>
-        <p className="text-subhead mx-auto mt-6 max-w-xl">{item.subline}</p>
+        <h2 className="text-headline home-scroll-headline">{item.headline}</h2>
+        <p className="text-subhead home-scroll-copy mx-auto mt-6 max-w-3xl">{item.subline}</p>
       </motion.div>
     </>
   );
@@ -165,7 +170,7 @@ export function ScrollPinStatement({
   height = "250vh",
 }: {
   eyebrow?: string;
-  headline: string;
+  headline: ReactNode;
   body: string;
   height?: string;
 }) {
@@ -176,8 +181,8 @@ export function ScrollPinStatement({
   });
 
   const opacity = useTransform(scrollYProgress, [0.15, 0.35, 0.65, 0.85], [0, 1, 1, 0]);
-  const y = useTransform(scrollYProgress, [0.15, 0.35, 0.65], [80, 0, -40]);
-  const scale = useTransform(scrollYProgress, [0.15, 0.4], [0.9, 1]);
+  const y = useTransform(scrollYProgress, [0.15, 0.35, 0.65], [36, 0, -16]);
+  const scale = useTransform(scrollYProgress, [0.15, 0.4, 0.7], [0.94, 1, 0.98]);
 
   return (
     <div ref={ref} style={{ height }} className="relative">
@@ -187,8 +192,8 @@ export function ScrollPinStatement({
           className="mx-auto max-w-4xl px-6 text-center"
         >
           {eyebrow && <p className="text-eyebrow mb-6">{eyebrow}</p>}
-          <h2 className="text-headline-sm">{headline}</h2>
-          <p className="text-body-lg mx-auto mt-8 max-w-2xl">{body}</p>
+          <h2 className="text-headline-sm home-scroll-headline home-scroll-brands">{headline}</h2>
+          <p className="text-body-lg home-scroll-copy mx-auto mt-8 max-w-3xl">{body}</p>
         </motion.div>
       </div>
     </div>

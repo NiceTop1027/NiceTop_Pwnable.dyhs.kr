@@ -3,6 +3,7 @@
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { resolveMediaUrl } from "@/lib/media";
+import { isSafeHref } from "@/lib/safe-url";
 import { HighlightedCodeBlock } from "./HighlightedCodeBlock";
 
 export function MarkdownContent({ content }: { content: string }) {
@@ -18,6 +19,21 @@ export function MarkdownContent({ content }: { content: string }) {
               {children}
             </HighlightedCodeBlock>
           ),
+          a: ({ href, children }) => {
+            const safeHref = typeof href === "string" && isSafeHref(href) ? href : null;
+            if (!safeHref) return <span>{children}</span>;
+            const external = safeHref.startsWith("http");
+            return (
+              <a
+                href={safeHref}
+                {...(external
+                  ? { target: "_blank", rel: "noopener noreferrer" }
+                  : {})}
+              >
+                {children}
+              </a>
+            );
+          },
           img: ({ src, alt }) => {
             const resolved = resolveMediaUrl(
               typeof src === "string" ? src : undefined,

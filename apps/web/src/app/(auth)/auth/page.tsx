@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { AuthPage } from "@/components/auth/AuthPage";
 import type { AuthMode } from "@/components/auth/AuthShell";
 
@@ -6,12 +7,16 @@ export const metadata = {
 };
 
 type Props = {
-  searchParams: Promise<{ tab?: string }>;
+  searchParams: Promise<{ tab?: string; next?: string }>;
 };
 
 export default async function AuthRoutePage({ searchParams }: Props) {
   const { tab } = await searchParams;
   const initialMode: AuthMode = tab === "register" ? "register" : "login";
 
-  return <AuthPage initialMode={initialMode} />;
+  return (
+    <Suspense fallback={null}>
+      <AuthPage initialMode={initialMode} />
+    </Suspense>
+  );
 }

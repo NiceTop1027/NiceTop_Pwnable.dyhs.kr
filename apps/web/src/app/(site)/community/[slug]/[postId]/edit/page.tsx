@@ -1,5 +1,6 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { PostEditor } from "@/components/community/PostEditor";
+import { serverApiFetch } from "@/lib/api-server";
 import { api } from "@/lib/api";
 
 type Props = { params: Promise<{ slug: string; postId: string }> };
@@ -22,6 +23,15 @@ export default async function BoardPostEditPage({ params }: Props) {
     post = await api.boardPost(slug, postId);
   } catch {
     notFound();
+  }
+
+  try {
+    const me = await serverApiFetch<{ id: string }>("/auth/me");
+    if (me.id !== post.author.id) {
+      redirect(`/community/${slug}/${postId}`);
+    }
+  } catch {
+    redirect(`/auth/login?next=${encodeURIComponent(`/community/${slug}/${postId}/edit`)}`);
   }
 
   return (

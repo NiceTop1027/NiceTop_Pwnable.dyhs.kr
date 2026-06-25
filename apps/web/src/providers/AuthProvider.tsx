@@ -12,8 +12,6 @@ import {
 import { api, ApiError, type AuthUser } from "@/lib/api";
 import { scoreToLevel } from "@/lib/level";
 
-const ACCESS_KEY = "pwnable_access_token";
-const REFRESH_KEY = "pwnable_refresh_token";
 const SUSPENDED_FLAG_KEY = "pwnable_account_suspended";
 
 type AuthContextValue = {
@@ -34,58 +32,28 @@ type AuthContextValue = {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-function persistTokens(accessToken: string, refreshToken: string) {
-  localStorage.setItem(ACCESS_KEY, accessToken);
-  localStorage.setItem(REFRESH_KEY, refreshToken);
-}
-
-function clearTokens() {
-  localStorage.removeItem(ACCESS_KEY);
-  localStorage.removeItem(REFRESH_KEY);
-}
-
-export function getAccessToken(): string | null {
-  if (typeof window === "undefined") return null;
-  return localStorage.getItem(ACCESS_KEY);
-}
-
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   const loadUser = useCallback(async () => {
-    const accessToken = getAccessToken();
-    const refreshToken = localStorage.getItem(REFRESH_KEY);
-
-    if (!accessToken && !refreshToken) {
-      setUser(null);
-      setIsLoading(false);
-      return;
-    }
-
     try {
-      if (accessToken) {
-        const me = await api.me(accessToken);
-        setUser(me);
-        return;
-      }
+      const me = await api.me();
+      setUser(me);
+      return;
     } catch (err) {
       if (err instanceof ApiError && err.message === "Account suspended") {
         sessionStorage.setItem(SUSPENDED_FLAG_KEY, "1");
       }
     }
 
-    if (refreshToken) {
-      try {
-        const res = await api.refresh(refreshToken);
-        persistTokens(res.accessToken, res.refreshToken);
-        setUser(res.user);
-        return;
-      } catch (err) {
-        if (err instanceof ApiError && err.message === "Account suspended") {
-          sessionStorage.setItem(SUSPENDED_FLAG_KEY, "1");
-        }
-        clearTokens();
+    try {
+      const res = await api.refresh();
+      setUser(res.user);
+      return;
+    } catch (err) {
+      if (err instanceof ApiError && err.message === "Account suspended") {
+        sessionStorage.setItem(SUSPENDED_FLAG_KEY, "1");
       }
     }
 
@@ -99,7 +67,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = useCallback(async (username: string, password: string) => {
     const res = await api.login(username, password);
     sessionStorage.removeItem(SUSPENDED_FLAG_KEY);
-    persistTokens(res.accessToken, res.refreshToken);
     setUser(res.user);
   }, []);
 
@@ -111,33 +78,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       displayName?: string;
     }) => {
       const res = await api.register(data);
-      persistTokens(res.accessToken, res.refreshToken);
       setUser(res.user);
     },
     [],
   );
 
   const logout = useCallback(async () => {
-    const refreshToken = localStorage.getItem(REFRESH_KEY) ?? undefined;
     try {
-      await api.logout(refreshToken);
+      await api.logout();
     } catch {
       // ignore
     }
-    clearTokens();
     setUser(null);
   }, []);
 
   const refreshUser = useCallback(async () => {
-    const token = getAccessToken();
-    if (!token) return;
     try {
-      const me = await api.me(token);
+      const me = await api.me();
       setUser(me);
     } catch (err) {
       if (err instanceof ApiError && err.message === "Account suspended") {
         sessionStorage.setItem(SUSPENDED_FLAG_KEY, "1");
-        clearTokens();
         setUser(null);
       }
       throw err;

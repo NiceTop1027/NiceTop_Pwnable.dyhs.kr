@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { adminApi, type Notice } from "@/lib/api";
-import { getAccessToken, useAuth } from "@/providers/AuthProvider";
+import { useAuth  } from "@/providers/AuthProvider";
 import { AdminBadge } from "./ui/AdminBadge";
 import { AdminButton } from "./ui/AdminButton";
 import { AdminCard } from "./ui/AdminCard";
@@ -17,9 +17,7 @@ export function NoticeAdminPanel() {
   const [error, setError] = useState<string | null>(null);
 
   async function load() {
-    const token = getAccessToken();
-    if (!token) return;
-    setItems(await adminApi.notices(token));
+    setItems(await adminApi.notices());
     setError(null);
   }
 
@@ -37,9 +35,7 @@ export function NoticeAdminPanel() {
 
   async function remove(id: string) {
     if (!confirm("삭제할까요?")) return;
-    const token = getAccessToken();
-    if (!token) return;
-    await adminApi.deleteNotice(token, id);
+    await adminApi.deleteNotice( id);
     await load();
   }
 

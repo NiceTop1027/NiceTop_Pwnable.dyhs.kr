@@ -1,5 +1,5 @@
-import { HeroSection } from "@/components/home/HeroSection";
-import { ScrollStory } from "@/components/home/ScrollStory";
+import { HomeLowerAmbient } from "@/components/home/HomeLowerAmbient";
+import { HomePageStory } from "@/components/home/HomePageStory";
 import { FeaturesSection } from "@/components/home/FeaturesSection";
 import { CurriculumSection } from "@/components/home/CurriculumSection";
 import { PartnersSection } from "@/components/home/PartnersSection";
@@ -17,13 +17,15 @@ export default async function HomePage() {
   }
 
   return (
-    <div className="bg-black">
-      <HeroSection />
-      <ScrollStory />
-      <FeaturesSection />
-      <CurriculumSection tracks={curriculumTracks} />
-      <PartnersSection />
-      <CtaSection />
+    <div className="home-page">
+      <HomePageStory />
+      <HomeLowerAmbient />
+      <div className="home-page-content home-page-rest">
+        <FeaturesSection />
+        <CurriculumSection tracks={curriculumTracks} />
+        <PartnersSection />
+        <CtaSection />
+      </div>
     </div>
   );
 }

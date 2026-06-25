@@ -13,7 +13,7 @@ import {
   blocksToMarkdown,
   parseMarkdownToBlocks,
 } from "@/lib/blocknote-markdown";
-import { getAccessToken, useAuth } from "@/providers/AuthProvider";
+import { useAuth  } from "@/providers/AuthProvider";
 
 type PostEditorProps = {
   boardSlug: string;
@@ -63,17 +63,10 @@ export function PostEditor({
       return;
     }
 
-    const token = getAccessToken();
-    if (!token) {
-      setError("로그인이 필요합니다.");
-      setSaveState("error");
-      return;
-    }
-
     setSaveState("saving");
     try {
       if (mode === "create") {
-        const post = await api.createBoardPost(boardSlug, token, {
+        const post = await api.createBoardPost(boardSlug, {
           title: trimmedTitle,
           content,
         });
@@ -85,7 +78,7 @@ export function PostEditor({
       }
 
       if (postId) {
-        await api.updateBoardPost(boardSlug, postId, token, {
+        await api.updateBoardPost(boardSlug, postId, {
           title: trimmedTitle,
           content,
         });
@@ -114,9 +107,7 @@ export function PostEditor({
 
   async function handleDelete() {
     if (!postId || !confirm("게시글을 삭제할까요?")) return;
-    const token = getAccessToken();
-    if (!token) return;
-    await api.deleteBoardPost(boardSlug, postId, token);
+    await api.deleteBoardPost(boardSlug, postId);
     router.push(`/community/${boardSlug}`);
     router.refresh();
   }

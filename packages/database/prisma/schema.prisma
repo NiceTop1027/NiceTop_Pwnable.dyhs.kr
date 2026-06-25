@@ -63,6 +63,22 @@ enum BoardType {
   NOTICE
 }
 
+enum InquiryCategory {
+  GENERAL
+  ACCOUNT
+  CONTENT
+  BUG
+  PRIVACY
+  OTHER
+}
+
+enum InquiryStatus {
+  PENDING
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+}
+
 enum ContainerStatus {
   PENDING
   RUNNING
@@ -103,6 +119,7 @@ model User {
   submissionLogs      SubmissionLog[]
   adminLogs           AdminLog[]
   challengesAuthored  Challenge[] @relation("ChallengeAuthor")
+  contactInquiries    ContactInquiry[]
 
   @@index([score])
   @@index([role])
@@ -149,6 +166,7 @@ model Lecture {
 
   category        LectureCategory       @relation(fields: [categoryId], references: [id], onDelete: Cascade)
   versions        LectureVersion[]
+  pages           LecturePage[]
   progress        UserLectureProgress[]
   curriculumItems CurriculumItem[]
   bookmarks       Bookmark[]
@@ -156,6 +174,22 @@ model Lecture {
   @@index([categoryId])
   @@index([tier])
   @@index([order])
+}
+
+model LecturePage {
+  id        String   @id @default(cuid())
+  lectureId String
+  title     String
+  slug      String
+  content   String   @db.Text
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  lecture Lecture @relation(fields: [lectureId], references: [id], onDelete: Cascade)
+
+  @@unique([lectureId, slug])
+  @@index([lectureId, order])
 }
 
 model LectureVersion {
@@ -176,15 +210,17 @@ model LectureVersion {
 }
 
 model UserLectureProgress {
-  id             String    @id @default(cuid())
-  userId         String
-  lectureId      String
-  versionId      String?
-  completed      Boolean   @default(false)
-  progress       Int       @default(0)
-  lastAccessedAt DateTime?
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
+  id               String    @id @default(cuid())
+  userId           String
+  lectureId        String
+  versionId        String?
+  completed        Boolean   @default(false)
+  progress         Int       @default(0)
+  visitedPageSlugs String[]  @default([])
+  lastPageSlug     String?
+  lastAccessedAt   DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
 
   user    User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   lecture Lecture         @relation(fields: [lectureId], references: [id], onDelete: Cascade)
@@ -625,4 +661,23 @@ model AdminLog {
   @@index([adminId])
   @@index([createdAt])
   @@index([action])
+}
+
+model ContactInquiry {
+  id        String          @id @default(cuid())
+  category  InquiryCategory
+  name      String
+  email     String
+  subject   String
+  message   String          @db.Text
+  userId    String?
+  status    InquiryStatus   @default(PENDING)
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([status])
+  @@index([createdAt])
+  @@index([email])
 }

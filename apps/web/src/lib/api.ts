@@ -1,4 +1,37 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4001";
+const SERVER_API_URL =
+  process.env.API_URL ??
+  process.env.NEXT_PUBLIC_API_URL ??
+  "http://localhost:4001";
+
+function getApiOrigin(): string {
+  if (typeof window !== "undefined") return "";
+  return SERVER_API_URL;
+}
+
+export function buildApiUrl(path: string): string {
+  const origin = getApiOrigin();
+  return origin ? `${origin}/api${path}` : `/api${path}`;
+}
+
+let refreshInFlight: Promise<boolean> | null = null;
+
+async function refreshSession(): Promise<boolean> {
+  if (refreshInFlight) return refreshInFlight;
+
+  refreshInFlight = fetch(buildApiUrl("/auth/refresh"), {
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({}),
+    cache: "no-store",
+  })
+    .then((res) => res.ok)
+    .finally(() => {
+      refreshInFlight = null;
+    });
+
+  return refreshInFlight;
+}
 
 export class ApiError extends Error {
   constructor(
@@ -33,32 +66,70 @@ function extractErrorMessage(data: unknown, status: number): string {
 }
 
 type FetchOptions = RequestInit & {
-  token?: string | null;
+  skipAuthRetry?: boolean;
+  serverCookieHeader?: string;
 };
+
+async function parseResponse<T>(res: Response): Promise<T> {
+  const data = await res.json().catch(() => null);
+  if (!res.ok) {
+    throw new ApiError(extractErrorMessage(data, res.status), res.status, data);
+  }
+  return data as T;
+}
 
 export async function apiFetch<T>(
   path: string,
   options: FetchOptions = {},
 ): Promise<T> {
-  const { token, headers, ...rest } = options;
+  const { skipAuthRetry, serverCookieHeader, headers, ...rest } = options;
+  const isFormData = rest.body instanceof FormData;
 
-  const res = await fetch(`${API_URL}/api${path}`, {
-    ...rest,
-    headers: {
-      "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...headers,
-    },
-    cache: rest.cache ?? "no-store",
-  });
+  const request = () =>
+    fetch(buildApiUrl(path), {
+      ...rest,
+      credentials: serverCookieHeader ? undefined : "include",
+      headers: {
+        ...(isFormData ? {} : { "Content-Type": "application/json" }),
+        ...(serverCookieHeader ? { Cookie: serverCookieHeader } : {}),
+        ...headers,
+      },
+      cache: rest.cache ?? "no-store",
+    });
 
-  const data = await res.json().catch(() => null);
+  let res = await request();
 
-  if (!res.ok) {
-    throw new ApiError(extractErrorMessage(data, res.status), res.status, data);
+  if (
+    res.status === 401 &&
+    !skipAuthRetry &&
+    !path.startsWith("/auth/") &&
+    !serverCookieHeader
+  ) {
+    const refreshed = await refreshSession();
+    if (refreshed) {
+      res = await request();
+    }
   }
 
-  return data as T;
+  return parseResponse<T>(res);
+}
+
+export async function apiUpload<T>(
+  path: string,
+  form: FormData,
+  options: { method?: string; serverCookieHeader?: string } = {},
+): Promise<T> {
+  const res = await fetch(buildApiUrl(path), {
+    method: options.method ?? "POST",
+    credentials: options.serverCookieHeader ? undefined : "include",
+    headers: options.serverCookieHeader
+      ? { Cookie: options.serverCookieHeader }
+      : undefined,
+    body: form,
+    cache: "no-store",
+  });
+
+  return parseResponse<T>(res);
 }
 
 export type AuthUser = {
@@ -75,8 +146,6 @@ export type AuthUser = {
 
 export type AuthResponse = {
   user: AuthUser;
-  accessToken: string;
-  refreshToken: string;
 };
 
 export type RankingEntry = {
@@ -84,7 +153,7 @@ export type RankingEntry = {
   id: string;
   username: string;
   displayName: string | null;
-  role: string;
+  avatarUrl: string | null;
   score: number;
   level: number;
   _count: { solves: number };
@@ -94,6 +163,24 @@ export type ChallengeDetail = Challenge & {
   solved: { id: string; solvedAt: string; isFirstBlood: boolean } | null;
 };
 
+export type LecturePageSummary = {
+  id: string;
+  title: string;
+  slug: string;
+  order: number;
+};
+
+export type LecturePageDetail = LecturePageSummary & {
+  content: string;
+};
+
+export type LectureProgressState = {
+  progress: number;
+  completed: boolean;
+  visitedPageSlugs: string[];
+  lastPageSlug: string | null;
+};
+
 export type LectureDetail = {
   id: string;
   title: string;
@@ -101,8 +188,23 @@ export type LectureDetail = {
   description: string | null;
   tier: string;
   category: { name: string; slug: string };
-  content: string;
   version: number;
+  pages: LecturePageSummary[];
+  page: LecturePageDetail;
+  userProgress: LectureProgressState | null;
+};
+
+export type LearningProgressItem = {
+  lectureId: string;
+  title: string;
+  slug: string;
+  category: string;
+  totalPages: number;
+  progress: number;
+  completed: boolean;
+  visitedPageSlugs: string[];
+  lastPageSlug: string | null;
+  lastAccessedAt: string | null;
 };
 
 export type LectureCategory = {
@@ -270,6 +372,14 @@ export type Curriculum = {
   _count: { items: number };
 };
 
+export type AdminLecturePage = {
+  id: string;
+  title: string;
+  slug: string;
+  content: string;
+  order: number;
+};
+
 export type AdminLecture = {
   id: string;
   title: string;
@@ -278,6 +388,7 @@ export type AdminLecture = {
   categoryId: string;
   category: { id: string; name: string; slug: string };
   content: string;
+  pages: AdminLecturePage[];
   isPublished: boolean;
   version: number;
   updatedAt: string;
@@ -336,64 +447,46 @@ export const api = {
       body: JSON.stringify(data),
     }),
 
-  me: (token: string) =>
+  me: () =>
     apiFetch<AuthUser & { _count: { solves: number; achievements: number; lectureProgress: number } }>(
-      "/auth/me",
-      { token },
+      "/auth/me", {},
     ),
 
-  updateProfile: (
-    token: string,
-    data: { displayName?: string; email?: string; bio?: string },
+  updateProfile: (data: { displayName?: string; email?: string; bio?: string },
   ) =>
     apiFetch<AuthUser>("/auth/me", {
       method: "PATCH",
       body: JSON.stringify(data),
-      token,
     }),
 
-  changePassword: (
-    token: string,
-    data: { currentPassword: string; newPassword: string },
+  changePassword: (data: { currentPassword: string; newPassword: string },
   ) =>
     apiFetch<{ success: boolean }>("/auth/password", {
       method: "PATCH",
       body: JSON.stringify(data),
-      token,
     }),
 
-  uploadAvatar: async (token: string, file: File) => {
+  uploadAvatar: async (file: File) => {
     const form = new FormData();
     form.append("avatar", file);
-
-    const res = await fetch(`${API_URL}/api/auth/avatar`, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${token}` },
-      body: form,
-      cache: "no-store",
-    });
-
-    const data = await res.json().catch(() => null);
-    if (!res.ok) {
-      throw new ApiError(extractErrorMessage(data, res.status), res.status, data);
-    }
-
-    return data as AuthUser;
+    return apiUpload<AuthUser>("/auth/avatar", form);
   },
 
-  deleteAvatar: (token: string) =>
-    apiFetch<AuthUser>("/auth/avatar", { method: "DELETE", token }),
+  deleteAvatar: () =>
+    apiFetch<AuthUser>("/auth/avatar", { method: "DELETE" }),
 
-  refresh: (refreshToken: string) =>
+  refresh: () =>
     apiFetch<AuthResponse>("/auth/refresh", {
       method: "POST",
-      body: JSON.stringify({ refreshToken }),
+      body: JSON.stringify({}),
+      skipAuthRetry: true,
     }),
 
-  logout: (refreshToken?: string) =>
+  logout: () =>
     apiFetch<{ success: boolean }>("/auth/logout", {
       method: "POST",
-      body: JSON.stringify({ refreshToken }),
+      body: JSON.stringify({}),
+      skipAuthRetry: true,
     }),
 
   ranking: (limit = 50) =>
@@ -427,61 +520,52 @@ export const api = {
       `/boards/${slug}/posts?page=${page}&limit=${limit}`,
     ),
 
-  boardPost: (slug: string, postId: string, token?: string | null) =>
-    apiFetch<BoardPostDetail>(`/boards/${slug}/posts/${postId}`, { token }),
+  boardPost: (slug: string, postId: string) =>
+    apiFetch<BoardPostDetail>(`/boards/${slug}/posts/${postId}`, {}),
 
   createBoardPost: (
     slug: string,
-    token: string,
     data: { title: string; content: string },
   ) =>
     apiFetch<BoardPostSummary>(`/boards/${slug}/posts`, {
       method: "POST",
       body: JSON.stringify(data),
-      token,
     }),
 
   updateBoardPost: (
     slug: string,
     postId: string,
-    token: string,
     data: { title?: string; content?: string },
   ) =>
     apiFetch<BoardPostSummary>(`/boards/${slug}/posts/${postId}`, {
       method: "PATCH",
       body: JSON.stringify(data),
-      token,
     }),
 
-  deleteBoardPost: (slug: string, postId: string, token: string) =>
+  deleteBoardPost: (slug: string, postId: string) =>
     apiFetch<{ success: boolean }>(`/boards/${slug}/posts/${postId}`, {
       method: "DELETE",
-      token,
     }),
 
-  toggleBoardPostLike: (slug: string, postId: string, token: string) =>
+  toggleBoardPostLike: (slug: string, postId: string) =>
     apiFetch<{ liked: boolean }>(`/boards/${slug}/posts/${postId}/like`, {
       method: "POST",
-      token,
     }),
 
   createBoardComment: (
     slug: string,
     postId: string,
-    token: string,
     data: { content: string; parentId?: string },
   ) =>
     apiFetch<BoardComment>(`/boards/${slug}/posts/${postId}/comments`, {
       method: "POST",
       body: JSON.stringify(data),
-      token,
     }),
 
   updateBoardComment: (
     slug: string,
     postId: string,
     commentId: string,
-    token: string,
     data: { content: string },
   ) =>
     apiFetch<BoardComment>(
@@ -489,7 +573,6 @@ export const api = {
       {
         method: "PATCH",
         body: JSON.stringify(data),
-        token,
       },
     ),
 
@@ -497,26 +580,43 @@ export const api = {
     slug: string,
     postId: string,
     commentId: string,
-    token: string,
   ) =>
     apiFetch<{ success: boolean }>(
       `/boards/${slug}/posts/${postId}/comments/${commentId}`,
-      { method: "DELETE", token },
+      { method: "DELETE" },
     ),
 
   notices: () => apiFetch<Notice[]>("/notices"),
 
   ctfEvents: () => apiFetch<CtfEvent[]>("/ctf"),
 
-  lecture: (slug: string) => apiFetch<LectureDetail>(`/lectures/${slug}`),
+  lecture: (slug: string, pageSlug?: string) =>
+    apiFetch<LectureDetail>(
+      pageSlug ? `/lectures/${slug}/${pageSlug}` : `/lectures/${slug}`,
+      {},
+    ),
 
-  challenge: (slug: string, token?: string | null) =>
-    apiFetch<ChallengeDetail>(`/challenges/${slug}`, { token }),
+  recordLectureProgress: (slug: string, pageSlug: string) =>
+    apiFetch<LectureProgressState & {
+      lectureId: string;
+      lectureSlug: string;
+      lectureTitle: string;
+      totalPages: number;
+    }>(`/lectures/${slug}/progress`, {
+      method: "POST",
+      body: JSON.stringify({ pageSlug }),
+    }),
 
-  submitFlag: (slug: string, flag: string, token: string) =>
+  learningProgress: () =>
+    apiFetch<LearningProgressItem[]>("/lectures/learning/progress", {}),
+
+  challenge: (slug: string) =>
+    apiFetch<ChallengeDetail>(`/challenges/${slug}`, {}),
+
+  submitFlag: (slug: string, flag: string) =>
     apiFetch<{ correct: boolean; isFirstBlood: boolean; points: number }>(
       `/challenges/${slug}/submit`,
-      { method: "POST", body: JSON.stringify({ flag }), token },
+      { method: "POST", body: JSON.stringify({ flag }) },
     ),
 
   notice: (id: string) => apiFetch<Notice>(`/notices/${id}`),
@@ -524,39 +624,57 @@ export const api = {
   notificationsRecent: () =>
     apiFetch<NotificationSummary>("/notifications/recent"),
 
-  notifications: (token: string) =>
-    apiFetch<NotificationSummary>("/notifications", { token }),
+  notifications: () =>
+    apiFetch<NotificationSummary>("/notifications", {}),
 
-  markAllNotificationsRead: (token: string) =>
-    apiFetch("/notifications/read-all", { method: "POST", token }),
+  markAllNotificationsRead: () =>
+    apiFetch("/notifications/read-all", { method: "POST" }),
 
-  markNotificationRead: (token: string, noticeId: string) =>
-    apiFetch(`/notifications/read/${noticeId}`, { method: "POST", token }),
+  markNotificationRead: (noticeId: string) =>
+    apiFetch(`/notifications/read/${noticeId}`, { method: "POST" }),
+
+  submitInquiry: (data: {
+    category: string;
+    name: string;
+    email: string;
+    subject: string;
+    message: string;
+    consent: boolean;
+  }) =>
+    apiFetch<{ id: string; createdAt: string }>("/contact/inquiries", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
 };
 
 export const adminApi = {
-  stats: (token: string) =>
-    apiFetch<Record<string, number>>("/admin/stats", { token }),
+  stats: () =>
+    apiFetch<Record<string, number>>("/admin/stats", {}),
 
-  logs: (token: string) => apiFetch<unknown[]>("/admin/logs", { token }),
+  logs: () => apiFetch<unknown[]>("/admin/logs", {}),
 
-  users: (token: string) => apiFetch<unknown[]>("/admin/users", { token }),
+  inquiries: () => apiFetch<unknown[]>("/admin/inquiries", {}),
 
-  updateUser: (token: string, id: string, data: { role?: string; isActive?: boolean }) =>
+  updateInquiryStatus: (id: string, status: string) =>
+    apiFetch(`/admin/inquiries/${id}/status`, {
+      method: "PATCH",
+      body: JSON.stringify({ status }),
+    }),
+
+  users: () => apiFetch<unknown[]>("/admin/users", {}),
+
+  updateUser: (id: string, data: { role?: string; isActive?: boolean }) =>
     apiFetch(`/admin/users/${id}`, {
       method: "PATCH",
       body: JSON.stringify(data),
-      token,
     }),
 
-  lectureCategories: (token: string) =>
-    apiFetch<{ id: string; name: string; slug: string }[]>("/admin/lectures/categories", { token }),
+  lectureCategories: () =>
+    apiFetch<{ id: string; name: string; slug: string }[]>("/admin/lectures/categories", {}),
 
-  lectures: (token: string) => apiFetch<unknown[]>("/admin/lectures", { token }),
+  lectures: () => apiFetch<unknown[]>("/admin/lectures", {}),
 
-  createLecture: (
-    token: string,
-    data: {
+  createLecture: (data: {
       categoryId: string;
       title: string;
       description?: string;
@@ -567,15 +685,12 @@ export const adminApi = {
     apiFetch<AdminLecture>("/admin/lectures", {
       method: "POST",
       body: JSON.stringify(data),
-      token,
     }),
 
-  getLecture: (token: string, id: string) =>
-    apiFetch<AdminLecture>(`/admin/lectures/${id}`, { token }),
+  getLecture: (id: string) =>
+    apiFetch<AdminLecture>(`/admin/lectures/${id}`, {}),
 
-  updateLecture: (
-    token: string,
-    id: string,
+  updateLecture: (id: string,
     data: {
       categoryId?: string;
       title?: string;
@@ -583,22 +698,26 @@ export const adminApi = {
       content?: string;
       isPublished?: boolean;
       slug?: string;
+      pages?: {
+        id?: string;
+        title: string;
+        slug?: string;
+        content: string;
+        order: number;
+      }[];
     },
   ) =>
     apiFetch<AdminLecture>(`/admin/lectures/${id}`, {
       method: "PATCH",
       body: JSON.stringify(data),
-      token,
     }),
 
-  deleteLecture: (token: string, id: string) =>
-    apiFetch(`/admin/lectures/${id}`, { method: "DELETE", token }),
+  deleteLecture: (id: string) =>
+    apiFetch(`/admin/lectures/${id}`, { method: "DELETE" }),
 
-  challenges: (token: string) => apiFetch<unknown[]>("/admin/challenges", { token }),
+  challenges: () => apiFetch<unknown[]>("/admin/challenges", {}),
 
-  createChallenge: (
-    token: string,
-    data: {
+  createChallenge: (data: {
       title: string;
       description: string;
       category: string;
@@ -612,57 +731,47 @@ export const adminApi = {
     apiFetch<AdminChallenge>("/admin/challenges", {
       method: "POST",
       body: JSON.stringify(data),
-      token,
     }),
 
-  getChallenge: (token: string, id: string) =>
-    apiFetch<AdminChallenge>(`/admin/challenges/${id}`, { token }),
+  getChallenge: (id: string) =>
+    apiFetch<AdminChallenge>(`/admin/challenges/${id}`, {}),
 
-  updateChallenge: (token: string, id: string, data: Record<string, unknown>) =>
+  updateChallenge: (id: string, data: Record<string, unknown>) =>
     apiFetch<AdminChallenge>(`/admin/challenges/${id}`, {
       method: "PATCH",
       body: JSON.stringify(data),
-      token,
     }),
 
-  deleteChallenge: (token: string, id: string) =>
-    apiFetch(`/admin/challenges/${id}`, { method: "DELETE", token }),
+  deleteChallenge: (id: string) =>
+    apiFetch(`/admin/challenges/${id}`, { method: "DELETE" }),
 
-  notices: (token: string) => apiFetch<Notice[]>("/admin/notices", { token }),
+  notices: () => apiFetch<Notice[]>("/admin/notices", {}),
 
-  createNotice: (
-    token: string,
-    data: { title: string; content: string; isPinned?: boolean },
+  createNotice: (data: { title: string; content: string; isPinned?: boolean },
   ) =>
     apiFetch<AdminNotice>("/admin/notices", {
       method: "POST",
       body: JSON.stringify(data),
-      token,
     }),
 
-  getNotice: (token: string, id: string) =>
-    apiFetch<AdminNotice>(`/admin/notices/${id}`, { token }),
+  getNotice: (id: string) =>
+    apiFetch<AdminNotice>(`/admin/notices/${id}`, {}),
 
-  updateNotice: (
-    token: string,
-    id: string,
+  updateNotice: (id: string,
     data: { title?: string; content?: string; isPinned?: boolean },
   ) =>
     apiFetch<AdminNotice>(`/admin/notices/${id}`, {
       method: "PATCH",
       body: JSON.stringify(data),
-      token,
     }),
 
-  deleteNotice: (token: string, id: string) =>
-    apiFetch(`/admin/notices/${id}`, { method: "DELETE", token }),
+  deleteNotice: (id: string) =>
+    apiFetch(`/admin/notices/${id}`, { method: "DELETE" }),
 
-  curricula: (token: string) =>
-    apiFetch<AdminCurriculum[]>("/admin/curricula", { token }),
+  curricula: () =>
+    apiFetch<AdminCurriculum[]>("/admin/curricula", {}),
 
-  createCurriculum: (
-    token: string,
-    data: {
+  createCurriculum: (data: {
       title: string;
       description?: string;
       tier?: string;
@@ -671,15 +780,12 @@ export const adminApi = {
     apiFetch<AdminCurriculum>("/admin/curricula", {
       method: "POST",
       body: JSON.stringify(data),
-      token,
     }),
 
-  getCurriculum: (token: string, id: string) =>
-    apiFetch<AdminCurriculum>(`/admin/curricula/${id}`, { token }),
+  getCurriculum: (id: string) =>
+    apiFetch<AdminCurriculum>(`/admin/curricula/${id}`, {}),
 
-  updateCurriculum: (
-    token: string,
-    id: string,
+  updateCurriculum: (id: string,
     data: {
       title?: string;
       description?: string;
@@ -690,81 +796,54 @@ export const adminApi = {
     apiFetch<AdminCurriculum>(`/admin/curricula/${id}`, {
       method: "PATCH",
       body: JSON.stringify(data),
-      token,
     }),
 
-  deleteCurriculum: (token: string, id: string) =>
-    apiFetch(`/admin/curricula/${id}`, { method: "DELETE", token }),
+  deleteCurriculum: (id: string) =>
+    apiFetch(`/admin/curricula/${id}`, { method: "DELETE" }),
 
-  addCurriculumItem: (
-    token: string,
-    curriculumId: string,
+  addCurriculumItem: (curriculumId: string,
     data: { lectureId?: string; challengeId?: string },
   ) =>
     apiFetch<AdminCurriculumItem>(`/admin/curricula/${curriculumId}/items`, {
       method: "POST",
       body: JSON.stringify(data),
-      token,
     }),
 
-  deleteCurriculumItem: (
-    token: string,
-    curriculumId: string,
+  deleteCurriculumItem: (curriculumId: string,
     itemId: string,
   ) =>
     apiFetch(`/admin/curricula/${curriculumId}/items/${itemId}`, {
       method: "DELETE",
-      token,
     }),
 
-  reorderCurriculumItems: (
-    token: string,
-    curriculumId: string,
+  reorderCurriculumItems: (curriculumId: string,
     itemIds: string[],
   ) =>
     apiFetch<AdminCurriculum>(`/admin/curricula/${curriculumId}/items/reorder`, {
       method: "PATCH",
       body: JSON.stringify({ itemIds }),
-      token,
     }),
 
-  communityPosts: (token: string) =>
-    apiFetch<AdminCommunityPost[]>("/admin/community/posts", { token }),
+  communityPosts: () =>
+    apiFetch<AdminCommunityPost[]>("/admin/community/posts", {}),
 
-  updateCommunityPost: (
-    token: string,
-    postId: string,
+  updateCommunityPost: (postId: string,
     data: { isPinned?: boolean },
   ) =>
     apiFetch<AdminCommunityPost>(`/admin/community/posts/${postId}`, {
       method: "PATCH",
       body: JSON.stringify(data),
-      token,
     }),
 
-  deleteCommunityPost: (token: string, postId: string) =>
+  deleteCommunityPost: (postId: string) =>
     apiFetch(`/admin/community/posts/${postId}`, {
       method: "DELETE",
-      token,
     }),
 
-  uploadContentImage: async (token: string, file: File) => {
+  uploadContentImage: async (file: File) => {
     const form = new FormData();
     form.append("file", file);
-
-    const res = await fetch(`${API_URL}/api/admin/uploads/content`, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${token}` },
-      body: form,
-      cache: "no-store",
-    });
-
-    const data = await res.json().catch(() => null);
-    if (!res.ok) {
-      throw new ApiError(extractErrorMessage(data, res.status), res.status, data);
-    }
-
-    return data as { url: string };
+    return apiUpload<{ url: string }>("/admin/uploads/content", form);
   },
 };
 

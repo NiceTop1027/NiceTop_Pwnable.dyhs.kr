@@ -13,7 +13,7 @@ import {
   type BoardPostDetail,
 } from "@/lib/api";
 import { formatBoardDate } from "@/lib/community";
-import { getAccessToken, useAuth } from "@/providers/AuthProvider";
+import { useAuth  } from "@/providers/AuthProvider";
 import { UserProfileLink } from "@/components/user/UserProfileLink";
 
 function canModerate(role?: string) {
@@ -53,11 +53,10 @@ function CommentItem({
     currentUserId === comment.author.id || canModerate(userRole);
 
   async function saveEdit() {
-    const token = getAccessToken();
-    if (!token || !text.trim()) return;
+    if (!text.trim()) return;
     setLoading(true);
     try {
-      await api.updateBoardComment(boardSlug, postId, comment.id, token, {
+      await api.updateBoardComment(boardSlug, postId, comment.id, {
         content: text.trim(),
       });
       setEditing(false);
@@ -69,11 +68,9 @@ function CommentItem({
 
   async function remove() {
     if (!confirm("댓글을 삭제할까요?")) return;
-    const token = getAccessToken();
-    if (!token) return;
     setLoading(true);
     try {
-      await api.deleteBoardComment(boardSlug, postId, comment.id, token);
+      await api.deleteBoardComment(boardSlug, postId, comment.id);
       onChanged();
     } finally {
       setLoading(false);
@@ -82,11 +79,10 @@ function CommentItem({
 
   async function submitReply(e: FormEvent) {
     e.preventDefault();
-    const token = getAccessToken();
-    if (!token || !text.trim()) return;
+    if (!text.trim()) return;
     setLoading(true);
     try {
-      await api.createBoardComment(boardSlug, postId, token, {
+      await api.createBoardComment(boardSlug, postId, {
         content: text.trim(),
         parentId: comment.id,
       });
@@ -230,8 +226,7 @@ export function PostDetailView({
   const [loading, setLoading] = useState(false);
 
   const reload = useCallback(async () => {
-    const token = getAccessToken();
-    const next = await api.boardPost(post.board.slug, post.id, token);
+    const next = await api.boardPost(post.board.slug, post.id);
     setPost(next);
   }, [post.board.slug, post.id]);
 
@@ -240,18 +235,11 @@ export function PostDetailView({
   const commentCount = countComments(post.comments);
 
   async function toggleLike() {
-    const token = getAccessToken();
-    if (!token) {
-      router.push(`/auth?next=/community/${post.board.slug}/${post.id}`);
-      return;
-    }
     setLoading(true);
     try {
       const res = await api.toggleBoardPostLike(
         post.board.slug,
-        post.id,
-        token,
-      );
+        post.id);
       setPost((prev) => ({
         ...prev,
         likedByMe: res.liked,
@@ -269,11 +257,9 @@ export function PostDetailView({
 
   async function removePost() {
     if (!confirm("게시글을 삭제할까요?")) return;
-    const token = getAccessToken();
-    if (!token) return;
     setLoading(true);
     try {
-      await api.deleteBoardPost(post.board.slug, post.id, token);
+      await api.deleteBoardPost(post.board.slug, post.id);
       router.push(`/community/${post.board.slug}`);
       router.refresh();
     } catch (err) {
@@ -285,17 +271,12 @@ export function PostDetailView({
 
   async function submitComment(e: FormEvent) {
     e.preventDefault();
-    const token = getAccessToken();
-    if (!token) {
-      router.push(`/auth?next=/community/${post.board.slug}/${post.id}`);
-      return;
-    }
     if (!comment.trim()) return;
 
     setLoading(true);
     setError("");
     try {
-      await api.createBoardComment(post.board.slug, post.id, token, {
+      await api.createBoardComment(post.board.slug, post.id, {
         content: comment.trim(),
       });
       setComment("");

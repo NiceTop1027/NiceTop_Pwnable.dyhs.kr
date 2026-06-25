@@ -137,13 +137,13 @@ export class ChallengesService {
       throw new BadRequestException('Incorrect flag');
     }
 
-    const solveCount = await this.prisma.solve.count({
-      where: { challengeId: challenge.id },
-    });
-
     const xpAwarded = calcChallengeXp(challenge.points, challenge.difficulty);
 
     const solve = await this.prisma.$transaction(async (tx) => {
+      const solveCount = await tx.solve.count({
+        where: { challengeId: challenge.id },
+      });
+
       const created = await tx.solve.create({
         data: {
           userId,

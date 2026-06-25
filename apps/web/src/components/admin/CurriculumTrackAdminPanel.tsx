@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { adminApi, type AdminCurriculum } from "@/lib/api";
 import { CURRICULUM_TIER_LABELS } from "@/lib/curriculum";
-import { getAccessToken, useAuth } from "@/providers/AuthProvider";
+import { useAuth  } from "@/providers/AuthProvider";
 import { AdminBadge } from "./ui/AdminBadge";
 import { AdminButton } from "./ui/AdminButton";
 import { AdminCard } from "./ui/AdminCard";
@@ -18,9 +18,7 @@ export function CurriculumTrackAdminPanel() {
   const [error, setError] = useState<string | null>(null);
 
   async function load() {
-    const token = getAccessToken();
-    if (!token) return;
-    const list = await adminApi.curricula(token);
+    const list = await adminApi.curricula();
     setTracks(list);
     setError(null);
   }
@@ -39,9 +37,7 @@ export function CurriculumTrackAdminPanel() {
 
   async function remove(id: string) {
     if (!confirm("이 트랙을 삭제할까요? 연결된 단계 정보도 함께 삭제됩니다.")) return;
-    const token = getAccessToken();
-    if (!token) return;
-    await adminApi.deleteCurriculum(token, id);
+    await adminApi.deleteCurriculum( id);
     await load();
   }
 

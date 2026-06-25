@@ -7,48 +7,118 @@ import {
   ParseFilePipe,
   Patch,
   Post,
+  Req,
+  Res,
+  UnauthorizedException,
   UploadedFile,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { FileTypeValidator } from '@nestjs/common/pipes/file/file-type.validator';
+import type { Request, Response } from 'express';
 
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
+import { LogoutDto } from './dto/logout.dto';
+import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
+import { REFRESH_TOKEN_COOKIE } from '../common/constants/auth-cookies';
+import {
+  clearAuthCookies,
+  setAuthCookies,
+} from '../common/utils/auth-cookies';
 import { Public } from '../common/decorators/public.decorator';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
+import { RateLimit } from '../common/decorators/rate-limit.decorator';
+import { RateLimitGuard } from '../common/guards/rate-limit.guard';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly configService: ConfigService,
+  ) {}
 
   @Public()
+  @RateLimit(5, 3_600_000)
+  @UseGuards(RateLimitGuard)
   @Post('register')
-  register(@Body() dto: RegisterDto) {
-    return this.authService.register(dto);
+  async register(
+    @Body() dto: RegisterDto,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const result = await this.authService.register(dto);
+    setAuthCookies(
+      res,
+      this.configService,
+      result.accessToken,
+      result.refreshToken,
+    );
+    return { user: result.user };
   }
 
   @Public()
+  @RateLimit(20, 60_000)
+  @UseGuards(RateLimitGuard)
   @Post('login')
-  login(@Body() dto: LoginDto) {
-    return this.authService.login(dto);
+  async login(
+    @Body() dto: LoginDto,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const result = await this.authService.login(dto);
+    setAuthCookies(
+      res,
+      this.configService,
+      result.accessToken,
+      result.refreshToken,
+    );
+    return { user: result.user };
   }
 
   @Public()
+  @RateLimit(30, 60_000)
+  @UseGuards(RateLimitGuard)
   @Post('refresh')
-  refresh(@Body('refreshToken') refreshToken: string) {
-    return this.authService.refresh(refreshToken);
+  async refresh(
+    @Body() dto: RefreshTokenDto,
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const refreshToken =
+      dto.refreshToken ?? req.cookies?.[REFRESH_TOKEN_COOKIE];
+    if (!refreshToken) {
+      throw new UnauthorizedException('Invalid refresh token');
+    }
+
+    const result = await this.authService.refresh(refreshToken);
+    setAuthCookies(
+      res,
+      this.configService,
+      result.accessToken,
+      result.refreshToken,
+    );
+    return { user: result.user };
   }
 
   @Public()
+  @RateLimit(30, 60_000)
+  @UseGuards(RateLimitGuard)
   @Post('logout')
-  logout(@Body('refreshToken') refreshToken?: string) {
-    return this.authService.logout(refreshToken);
+  async logout(
+    @Body() dto: LogoutDto,
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const refreshToken =
+      dto.refreshToken ?? req.cookies?.[REFRESH_TOKEN_COOKIE];
+    await this.authService.logout(refreshToken);
+    clearAuthCookies(res, this.configService);
+    return { success: true };
   }
 
   @UseGuards(JwtAuthGuard)
@@ -68,11 +138,14 @@ export class AuthController {
 
   @UseGuards(JwtAuthGuard)
   @Patch('password')
-  changePassword(
+  async changePassword(
     @CurrentUser() user: { id: string },
     @Body() dto: ChangePasswordDto,
+    @Res({ passthrough: true }) res: Response,
   ) {
-    return this.authService.changePassword(user.id, dto);
+    await this.authService.changePassword(user.id, dto);
+    clearAuthCookies(res, this.configService);
+    return { success: true };
   }
 
   @UseGuards(JwtAuthGuard)

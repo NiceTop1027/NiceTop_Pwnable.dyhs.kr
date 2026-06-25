@@ -1,14 +1,14 @@
-import { notFound } from "next/navigation";
-import { api } from "@/lib/api";
-import { LectureArticle } from "@/components/lectures/LectureArticle";
+import { serverLecture } from "@/lib/api-server";
+import { requireAuthLecture } from "@/lib/lecture-server";
+import { LectureReader } from "@/components/lectures/LectureReader";
 
 type Props = { params: Promise<{ slug: string }> };
 
 export async function generateMetadata({ params }: Props) {
   const { slug } = await params;
   try {
-    const l = await api.lecture(slug);
-    return { title: l.title };
+    const lecture = await serverLecture(slug);
+    return { title: `${lecture.page.title} · ${lecture.title}` };
   } catch {
     return { title: "커리큘럼" };
   }
@@ -16,20 +16,6 @@ export async function generateMetadata({ params }: Props) {
 
 export default async function CurriculumDocPage({ params }: Props) {
   const { slug } = await params;
-
-  let lecture;
-  try {
-    lecture = await api.lecture(slug);
-  } catch {
-    notFound();
-  }
-
-  return (
-    <LectureArticle
-      title={lecture.title}
-      description={lecture.description}
-      category={lecture.category.name}
-      content={lecture.content}
-    />
-  );
+  const lecture = await requireAuthLecture(slug);
+  return <LectureReader lecture={lecture} />;
 }

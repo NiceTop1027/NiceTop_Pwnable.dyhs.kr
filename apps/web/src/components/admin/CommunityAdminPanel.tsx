@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { adminApi, type AdminCommunityPost } from "@/lib/api";
 import { authorName, formatBoardDate } from "@/lib/community";
-import { getAccessToken } from "@/providers/AuthProvider";
 import { AdminBadge } from "./ui/AdminBadge";
 import { AdminButton } from "./ui/AdminButton";
 import { AdminCard } from "./ui/AdminCard";
@@ -16,9 +15,7 @@ export function CommunityAdminPanel() {
   const [loading, setLoading] = useState(true);
 
   async function load() {
-    const token = getAccessToken();
-    if (!token) return;
-    setPosts(await adminApi.communityPosts(token));
+    setPosts(await adminApi.communityPosts());
   }
 
   useEffect(() => {
@@ -28,9 +25,7 @@ export function CommunityAdminPanel() {
   }, []);
 
   async function togglePin(post: AdminCommunityPost) {
-    const token = getAccessToken();
-    if (!token) return;
-    await adminApi.updateCommunityPost(token, post.id, {
+    await adminApi.updateCommunityPost( post.id, {
       isPinned: !post.isPinned,
     });
     await load();
@@ -38,9 +33,7 @@ export function CommunityAdminPanel() {
 
   async function remove(id: string) {
     if (!confirm("이 글을 삭제할까요?")) return;
-    const token = getAccessToken();
-    if (!token) return;
-    await adminApi.deleteCommunityPost(token, id);
+    await adminApi.deleteCommunityPost( id);
     await load();
   }
 

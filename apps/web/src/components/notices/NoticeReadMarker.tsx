@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { api } from "@/lib/api";
 import { markGuestNoticeRead } from "@/lib/notification-storage";
-import { getAccessToken, useAuth } from "@/providers/AuthProvider";
+import { useAuth  } from "@/providers/AuthProvider";
 
 export function NoticeReadMarker({
   noticeId,
@@ -16,9 +16,7 @@ export function NoticeReadMarker({
 
   useEffect(() => {
     if (user) {
-      const token = getAccessToken();
-      if (!token) return;
-      api.markNotificationRead(token, noticeId).catch(() => undefined);
+      api.markNotificationRead( noticeId).catch(() => undefined);
       return;
     }
 

@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { adminApi } from "@/lib/api";
-import { getAccessToken } from "@/providers/AuthProvider";
 import { AdminCard } from "@/components/admin/ui/AdminCard";
 import { AdminEmpty } from "@/components/admin/ui/AdminEmpty";
 
@@ -36,13 +35,8 @@ export default function AdminDashboardPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const token = getAccessToken();
-    if (!token) {
-      setLoading(false);
-      return;
-    }
     adminApi
-      .stats(token)
+      .stats()
       .then((data) => setStats(normalizeStats(data)))
       .catch(() => setStats(null))
       .finally(() => setLoading(false));

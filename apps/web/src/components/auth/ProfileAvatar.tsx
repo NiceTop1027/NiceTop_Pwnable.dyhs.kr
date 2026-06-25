@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Camera, Trash2 } from "lucide-react";
-import { useAuth, getAccessToken } from "@/providers/AuthProvider";
+import { useAuth } from "@/providers/AuthProvider";
 import { api, ApiError, type AuthUser } from "@/lib/api";
 import { resolveAvatarUrl } from "@/lib/avatar";
 import { translateApiError } from "@/lib/auth-validation";
@@ -69,12 +69,10 @@ export function ProfileAvatar({
   }
 
   async function uploadFile(file: File) {
-    const token = getAccessToken();
-    if (!token) return;
 
     setLoading(true);
     try {
-      const updated = await api.uploadAvatar(token, file);
+      const updated = await api.uploadAvatar( file);
       applyUser(updated);
     } catch (err) {
       reportError(
@@ -93,12 +91,10 @@ export function ProfileAvatar({
 
   async function handleRemove(e: React.MouseEvent) {
     e.stopPropagation();
-    const token = getAccessToken();
-    if (!token) return;
 
     setLoading(true);
     try {
-      const updated = await api.deleteAvatar(token);
+      const updated = await api.deleteAvatar();
       applyUser(updated);
     } catch (err) {
       reportError(

@@ -1,4 +1,5 @@
 import { Controller, Get, Param, Query } from '@nestjs/common';
+import { parsePositiveInt } from '../common/utils/pagination';
 import { Public } from '../common/decorators/public.decorator';
 import { UsersService } from './users.service';
 
@@ -9,8 +10,7 @@ export class UsersController {
   @Public()
   @Get('ranking')
   getRanking(@Query('limit') limit?: string) {
-    const parsedLimit = limit ? parseInt(limit, 10) : 50;
-    return this.usersService.getRanking(parsedLimit);
+    return this.usersService.getRanking(parsePositiveInt(limit, 50, 100));
   }
 
   @Public()
@@ -19,7 +19,6 @@ export class UsersController {
     return this.usersService.findByUsername(username);
   }
 
-  @Public()
   @Get(':id')
   findById(@Param('id') id: string) {
     return this.usersService.findById(id);

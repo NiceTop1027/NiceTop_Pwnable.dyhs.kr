@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { adminApi } from "@/lib/api";
 import { createOnce } from "@/lib/create-once";
-import { getAccessToken, useAuth } from "@/providers/AuthProvider";
+import { useAuth  } from "@/providers/AuthProvider";
 
 export default function AdminCurriculumTrackNewPage() {
   const router = useRouter();
@@ -13,14 +13,8 @@ export default function AdminCurriculumTrackNewPage() {
   useEffect(() => {
     if (isLoading || !user) return;
 
-    const token = getAccessToken();
-    if (!token) {
-      router.replace("/admin/curriculum");
-      return;
-    }
-
     createOnce("admin:curriculum-track:new", () =>
-      adminApi.createCurriculum(token, {
+      adminApi.createCurriculum( {
         title: "입문",
         description: "",
         tier: "BEGINNER",

@@ -9,6 +9,7 @@ import {
 } from "framer-motion";
 import { Button } from "@/components/ui/Button";
 import { resolveHomeCurriculumTracks, type CurriculumTrack } from "@/lib/curriculum";
+import { useHydrated } from "@/lib/use-hydrated";
 
 function TrackSlide({
   track,
@@ -21,6 +22,7 @@ function TrackSlide({
   total: number;
   scrollYProgress: MotionValue<number>;
 }) {
+  const hydrated = useHydrated();
   const segment = 1 / total;
   const start = index * segment;
   const enter = start + segment * 0.15;
@@ -44,14 +46,14 @@ function TrackSlide({
 
   return (
     <motion.div
-      style={{ opacity, y, scale, filter }}
+      style={hydrated ? { opacity, y, scale, filter } : undefined}
       className="absolute inset-0 flex flex-col justify-center"
     >
       <p className="text-eyebrow mb-4">{track.name}</p>
       <h3 className="text-[clamp(2rem,4vw,3rem)] font-semibold tracking-tight text-[var(--text)]">
         {track.label}
       </h3>
-      <p className="text-body-lg mt-4 max-w-md">{track.desc}</p>
+      <p className="text-body-lg home-scroll-copy mt-4 max-w-xl">{track.desc}</p>
       <div className="mt-10 space-y-3">
         {track.steps.length > 0 ? (
           track.steps.map((step, i) => (
@@ -96,6 +98,7 @@ function ProgressDot({
   total: number;
   scrollYProgress: MotionValue<number>;
 }) {
+  const hydrated = useHydrated();
   const segment = 1 / total;
   const center = index * segment + segment * 0.4;
   const width = useTransform(
@@ -111,7 +114,7 @@ function ProgressDot({
 
   return (
     <motion.div
-      style={{ width, opacity }}
+      style={hydrated ? { width, opacity } : undefined}
       className="h-1.5 rounded-full bg-[var(--text)]"
     />
   );
@@ -126,12 +129,12 @@ export function CurriculumSection({ tracks }: { tracks: CurriculumTrack[] }) {
 
   const displayTracks = resolveHomeCurriculumTracks(tracks);
 
-  const sectionHeight = `${Math.max(300, displayTracks.length * 150)}vh`;
+  const sectionHeight = `${Math.max(360, displayTracks.length * 200)}vh`;
 
   return (
-    <section ref={ref} className="relative bg-black" style={{ height: sectionHeight }}>
+    <section ref={ref} className="home-section home-section--curriculum relative" style={{ height: sectionHeight }}>
       <div className="sticky top-0 h-[100svh] overflow-hidden">
-        <div className="mx-auto flex h-full max-w-[980px] items-center px-6">
+        <div className="home-section-inner flex h-full items-center">
           <div className="grid w-full items-center gap-12 lg:grid-cols-2 lg:gap-20">
             {/* Left — 고정 */}
             <div className="lg:pr-8">
@@ -141,7 +144,7 @@ export function CurriculumSection({ tracks }: { tracks: CurriculumTrack[] }) {
                 <br />
                 한 길로
               </h2>
-              <p className="text-body-lg mt-6 max-w-sm">
+              <p className="text-body-lg home-scroll-copy mt-6 max-w-md">
                 3-Track 로드맵으로 어디서 시작해야 할지 고민하지 마세요
               </p>
               <div className="mt-10">
@@ -152,7 +155,7 @@ export function CurriculumSection({ tracks }: { tracks: CurriculumTrack[] }) {
             </div>
 
             {/* Right — 스크롤마다 트랙 전환 */}
-            <div className="relative h-[420px] lg:h-[480px]">
+            <div className="curriculum-stage relative h-[420px] lg:h-[480px]">
               {displayTracks.map((track, i) => (
                 <TrackSlide
                   key={track.slug}

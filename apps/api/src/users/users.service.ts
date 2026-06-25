@@ -58,44 +58,43 @@ export class UsersService {
     const user = await this.prisma.user.findUnique({
       where: { id },
       select: {
-        id: true,
-        username: true,
-        email: true,
-        displayName: true,
-        role: true,
-        score: true,
-        bio: true,
-        avatarUrl: true,
-        createdAt: true,
-        _count: {
-          select: {
-            solves: true,
-            achievements: true,
-          },
-        },
+        ...publicProfileSelect,
+        isActive: true,
       },
     });
 
-    if (!user) {
+    if (!user?.isActive) {
       throw new NotFoundException('User not found');
     }
 
     return {
-      ...user,
+      id: user.id,
+      username: user.username,
+      displayName: user.displayName,
+      bio: user.bio,
+      avatarUrl: user.avatarUrl,
+      score: user.score,
       level: scoreToLevel(user.score),
+      createdAt: user.createdAt,
+      _count: {
+        solves: user._count.solves,
+        achievements: user._count.achievements,
+        lectureProgress: user._count.lectureProgress,
+      },
     };
   }
 
   async getRanking(limit = 50) {
+    const safeLimit = Math.min(Math.max(limit, 1), 100);
     const users = await this.prisma.user.findMany({
       where: { isActive: true },
       orderBy: { score: 'desc' },
-      take: limit,
+      take: safeLimit,
       select: {
         id: true,
         username: true,
         displayName: true,
-        role: true,
+        avatarUrl: true,
         score: true,
         _count: {
           select: {
@@ -110,7 +109,7 @@ export class UsersService {
       id: user.id,
       username: user.username,
       displayName: user.displayName,
-      role: user.role,
+      avatarUrl: user.avatarUrl,
       score: user.score,
       level: scoreToLevel(user.score),
       _count: user._count,

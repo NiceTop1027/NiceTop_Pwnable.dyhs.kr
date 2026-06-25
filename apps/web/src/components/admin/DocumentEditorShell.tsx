@@ -32,6 +32,7 @@ type DocumentEditorShellProps = {
   loading?: boolean;
   loadingMessage?: string;
   footer?: ReactNode;
+  showBackLink?: boolean;
 };
 
 function SaveStatus({
@@ -90,6 +91,7 @@ export function DocumentEditorShell({
   loading = false,
   loadingMessage = "문서 불러오는 중",
   footer,
+  showBackLink = true,
 }: DocumentEditorShellProps) {
   if (loading) {
     return (
@@ -124,10 +126,12 @@ export function DocumentEditorShell({
 
       <header className="notion-toolbar">
         <div className="notion-toolbar-start">
-          <Link href={backHref} className="notion-toolbar-back">
-            <ArrowLeft className="h-4 w-4" strokeWidth={1.5} />
-            목록
-          </Link>
+          {showBackLink && (
+            <Link href={backHref} className="notion-toolbar-back">
+              <ArrowLeft className="h-4 w-4" strokeWidth={1.5} />
+              목록
+            </Link>
+          )}
           <SaveStatus saveState={saveState} isDirty={isDirty} />
         </div>
 

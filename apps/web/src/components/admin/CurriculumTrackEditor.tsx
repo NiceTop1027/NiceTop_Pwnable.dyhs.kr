@@ -11,7 +11,6 @@ import {
 } from "@/lib/api";
 import { blocksToMarkdown, parseMarkdownToBlocks } from "@/lib/blocknote-markdown";
 import { CURRICULUM_TIER_OPTIONS } from "@/lib/curriculum";
-import { getAccessToken } from "@/providers/AuthProvider";
 import {
   DocumentEditorShell,
   type SaveState,
@@ -38,21 +37,17 @@ export function CurriculumTrackEditor({ trackId }: { trackId: string }) {
   const [itemsBusy, setItemsBusy] = useState(false);
 
   const reloadTrack = useCallback(async () => {
-    const token = getAccessToken();
-    if (!token) return null;
-    const data = await adminApi.getCurriculum(token, trackId);
+        const data = await adminApi.getCurriculum( trackId);
     setTrack(data);
     return data;
   }, [trackId]);
 
   useEffect(() => {
-    const token = getAccessToken();
-    if (!token) return;
 
     Promise.all([
-      adminApi.lectures(token),
-      adminApi.challenges(token),
-      adminApi.getCurriculum(token, trackId),
+      adminApi.lectures(),
+      adminApi.challenges(),
+      adminApi.getCurriculum( trackId),
     ])
       .then(([lectureList, challengeList, data]) => {
         setLectures(lectureList as LectureOption[]);
@@ -82,13 +77,12 @@ export function CurriculumTrackEditor({ trackId }: { trackId: string }) {
   const availableChallenges = challenges.filter((c) => !usedChallengeIds.has(c.id));
 
   const save = useCallback(async () => {
-    const token = getAccessToken();
-    if (!token || !track) return;
+    if (!track) return;
 
     setSaveState("saving");
     try {
       const description = blocksToMarkdown(blocks ?? []);
-      const updated = await adminApi.updateCurriculum(token, trackId, {
+      const updated = await adminApi.updateCurriculum( trackId, {
         title: title.trim() || "입문",
         tier,
         order,
@@ -116,15 +110,12 @@ export function CurriculumTrackEditor({ trackId }: { trackId: string }) {
 
   async function handleDelete() {
     if (!confirm("이 트랙을 삭제할까요?")) return;
-    const token = getAccessToken();
-    if (!token) return;
-    await adminApi.deleteCurriculum(token, trackId);
+    await adminApi.deleteCurriculum( trackId);
     router.push("/admin/curriculum");
   }
 
   async function addItem(type: "lecture" | "challenge") {
-    const token = getAccessToken();
-    if (!token || !track) return;
+    if (!track) return;
 
     const lectureId = type === "lecture" ? selectedLectureId : undefined;
     const challengeId = type === "challenge" ? selectedChallengeId : undefined;
@@ -132,7 +123,7 @@ export function CurriculumTrackEditor({ trackId }: { trackId: string }) {
 
     setItemsBusy(true);
     try {
-      await adminApi.addCurriculumItem(token, trackId, { lectureId, challengeId });
+      await adminApi.addCurriculumItem( trackId, { lectureId, challengeId });
       await reloadTrack();
       if (type === "lecture") setSelectedLectureId("");
       if (type === "challenge") setSelectedChallengeId("");
@@ -142,12 +133,11 @@ export function CurriculumTrackEditor({ trackId }: { trackId: string }) {
   }
 
   async function removeItem(itemId: string) {
-    const token = getAccessToken();
-    if (!token || !track) return;
+    if (!track) return;
 
     setItemsBusy(true);
     try {
-      await adminApi.deleteCurriculumItem(token, trackId, itemId);
+      await adminApi.deleteCurriculumItem( trackId, itemId);
       await reloadTrack();
     } finally {
       setItemsBusy(false);
@@ -155,8 +145,7 @@ export function CurriculumTrackEditor({ trackId }: { trackId: string }) {
   }
 
   async function moveItem(item: AdminCurriculumItem, direction: -1 | 1) {
-    const token = getAccessToken();
-    if (!token || !track) return;
+    if (!track) return;
 
     const index = track.items.findIndex((entry) => entry.id === item.id);
     const target = index + direction;
@@ -167,7 +156,7 @@ export function CurriculumTrackEditor({ trackId }: { trackId: string }) {
 
     setItemsBusy(true);
     try {
-      const updated = await adminApi.reorderCurriculumItems(token, trackId, itemIds);
+      const updated = await adminApi.reorderCurriculumItems( trackId, itemIds);
       setTrack(updated);
     } finally {
       setItemsBusy(false);

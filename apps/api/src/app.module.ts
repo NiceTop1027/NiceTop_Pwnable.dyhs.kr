@@ -13,8 +13,11 @@ import { NoticesModule } from './notices/notices.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { CtfModule } from './ctf/ctf.module';
 import { AdminModule } from './admin/admin.module';
+import { CommonModule } from './common/common.module';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { RolesGuard } from './common/guards/roles.guard';
+import { UploadsModule } from './uploads/uploads.module';
+import { ContactModule } from './contact/contact.module';
 
 @Module({
   imports: [
@@ -22,6 +25,7 @@ import { RolesGuard } from './common/guards/roles.guard';
       isGlobal: true,
       envFilePath: ['../../.env', '.env'],
     }),
+    CommonModule,
     PrismaModule,
     HealthModule,
     AuthModule,
@@ -34,6 +38,8 @@ import { RolesGuard } from './common/guards/roles.guard';
     NotificationsModule,
     CtfModule,
     AdminModule,
+    UploadsModule,
+    ContactModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: JwtAuthGuard },
