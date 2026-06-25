@@ -218,9 +218,15 @@
 
 .doc-prose pre code {
   padding: 0;
+  border: none;
   background: transparent;
   font-size: 0.875rem;
   line-height: 1.6;
+}
+
+.doc-prose .doc-code-block code {
+  display: block;
+  white-space: pre;
 }
 
 .doc-prose hr {

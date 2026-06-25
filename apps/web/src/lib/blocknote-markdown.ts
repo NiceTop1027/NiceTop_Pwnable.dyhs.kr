@@ -1,12 +1,15 @@
 "use client";
 
 import { BlockNoteEditor, type PartialBlock } from "@blocknote/core";
+import { documentBlockNoteSchema } from "./blocknote-schema";
 
 let helperEditor: BlockNoteEditor | null = null;
 
 function editor() {
   if (!helperEditor) {
-    helperEditor = BlockNoteEditor.create();
+    helperEditor = BlockNoteEditor.create({
+      schema: documentBlockNoteSchema,
+    });
   }
   return helperEditor;
 }

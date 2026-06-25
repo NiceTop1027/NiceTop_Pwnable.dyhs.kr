@@ -1828,10 +1828,46 @@ a {
   box-shadow: 0 1px 0 rgba(255, 255, 255, 0.04) inset;
 }
 
+.notion-editor .bn-block-content[data-content-type="codeBlock"] > div:first-child {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 0.5rem;
+}
+
+.notion-editor .bn-block-content[data-content-type="codeBlock"] select {
+  appearance: none;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 0.75rem;
+  line-height: 1;
+  padding: 0.35rem 1.75rem 0.35rem 0.75rem;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='rgba(255,255,255,0.45)' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.55rem center;
+  transition:
+    border-color 0.2s ease,
+    background-color 0.2s ease,
+    color 0.2s ease;
+}
+
+.notion-editor .bn-block-content[data-content-type="codeBlock"] select:hover {
+  border-color: rgba(255, 255, 255, 0.18);
+  color: var(--text);
+}
+
+.notion-editor .bn-block-content[data-content-type="codeBlock"] select:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.2);
+  outline-offset: 2px;
+}
+
 .notion-editor .bn-block-content[data-content-type="codeBlock"] pre {
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   font-size: 0.875rem;
   line-height: 1.65;
+  margin: 0;
 }
 
 .notion-editor .bn-block-content[data-content-type="quote"] blockquote {

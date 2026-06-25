@@ -7,6 +7,7 @@ import { BlockNoteView } from "@blocknote/mantine";
 import { FormattingToolbarController, useCreateBlockNote } from "@blocknote/react";
 import { useCallback } from "react";
 import { adminApi } from "@/lib/api";
+import { documentBlockNoteSchema } from "@/lib/blocknote-schema";
 import { resolveMediaUrl } from "@/lib/media";
 import { getAccessToken } from "@/providers/AuthProvider";
 import { DocumentFormattingToolbar } from "./DocumentFormattingToolbar";
@@ -52,6 +53,7 @@ export function NotionEditor({
 
   const editor = useCreateBlockNote({
     dictionary: ko,
+    schema: documentBlockNoteSchema,
     initialContent: blocks,
     uploadFile,
     resolveFileUrl,
