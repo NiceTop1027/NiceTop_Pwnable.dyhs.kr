@@ -15,6 +15,7 @@ function TrackCard({ track, index }: { track: CurriculumTrack; index: number }) 
         <div className="curriculum-track-card-heading">
           <p className="text-eyebrow">{track.name}</p>
           <h2 className="curriculum-track-title">{track.label} 트랙</h2>
+          {track.desc && <p className="curriculum-track-desc">{track.desc}</p>}
         </div>
       </header>
 
@@ -62,7 +63,10 @@ export default function CurriculumContent({ tracks }: { tracks: CurriculumTrack[
   return (
     <div className="curriculum-page">
       <FadeIn>
-        <PageHeader title="커리큘럼" />
+        <PageHeader
+          title="커리큘럼"
+          description="입문 · 중급 · 고급 단계별 학습 경로"
+        />
       </FadeIn>
 
       {tracks.length > 0 ? (
@@ -83,12 +87,14 @@ export default function CurriculumContent({ tracks }: { tracks: CurriculumTrack[
         <FadeIn delay={0.12}>
           <div className="curriculum-cta">
             {user ? (
-              <>
-                <h2 className="text-headline-sm">학습을 이어가세요</h2>
-                <p className="text-body-lg mx-auto mt-4 max-w-md">
-                  {user.displayName ?? user.username}님, 커리큘럼에 맞춰 강의와 워게임을 진행해 보세요
-                </p>
-                <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
+              <div className="curriculum-cta-row">
+                <div className="curriculum-cta-copy">
+                  <h2 className="curriculum-cta-title">학습을 이어가세요</h2>
+                  <p className="curriculum-cta-text">
+                    {`${user.displayName ?? user.username}님, 커리큘럼에 맞춰 강의와 워게임을 진행해 보세요`}
+                  </p>
+                </div>
+                <div className="curriculum-cta-actions">
                   <Button href={firstLectureHref} variant="fill">
                     첫 강의 시작
                   </Button>
@@ -96,19 +102,19 @@ export default function CurriculumContent({ tracks }: { tracks: CurriculumTrack[
                     워게임 도전
                   </Button>
                 </div>
-              </>
+              </div>
             ) : (
-              <>
-                <h2 className="text-headline-sm">준비되셨나요?</h2>
-                <p className="text-body-lg mx-auto mt-4 max-w-md">
-                  회원가입 후 학습을 시작하세요
-                </p>
-                <div className="mt-10">
+              <div className="curriculum-cta-row">
+                <div className="curriculum-cta-copy">
+                  <h2 className="curriculum-cta-title">준비되셨나요?</h2>
+                  <p className="curriculum-cta-text">회원가입 후 학습을 시작하세요</p>
+                </div>
+                <div className="curriculum-cta-actions">
                   <Button href="/auth?tab=register" variant="fill">
                     시작하기
                   </Button>
                 </div>
-              </>
+              </div>
             )}
           </div>
         </FadeIn>
