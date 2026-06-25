@@ -149,6 +149,23 @@ export type BoardAuthor = {
   id: string;
   username: string;
   displayName: string | null;
+  avatarUrl: string | null;
+};
+
+export type PublicUserProfile = {
+  id: string;
+  username: string;
+  displayName: string | null;
+  bio: string | null;
+  avatarUrl: string | null;
+  score: number;
+  level: number;
+  createdAt: string;
+  _count: {
+    solves: number;
+    achievements: number;
+    lectureProgress: number;
+  };
 };
 
 export type BoardPostSummary = {
@@ -381,6 +398,9 @@ export const api = {
 
   ranking: (limit = 50) =>
     apiFetch<RankingEntry[]>(`/users/ranking?limit=${limit}`),
+
+  userProfile: (username: string) =>
+    apiFetch<PublicUserProfile>(`/users/profile/${username}`),
 
   lectureCategories: () =>
     apiFetch<LectureCategory[]>("/lectures/categories"),

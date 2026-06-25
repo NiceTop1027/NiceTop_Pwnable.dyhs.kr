@@ -14,6 +14,12 @@ export class UsersController {
   }
 
   @Public()
+  @Get('profile/:username')
+  findByUsername(@Param('username') username: string) {
+    return this.usersService.findByUsername(username);
+  }
+
+  @Public()
   @Get(':id')
   findById(@Param('id') id: string) {
     return this.usersService.findById(id);

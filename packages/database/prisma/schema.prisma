@@ -474,6 +474,7 @@ model Post {
   author    User       @relation(fields: [authorId], references: [id], onDelete: Cascade)
   comments  Comment[]
   likes     PostLike[]
+  views     PostView[]
   bookmarks Bookmark[]
   reports   Report[]
 
@@ -501,6 +502,19 @@ model Comment {
   @@index([postId])
   @@index([authorId])
   @@index([parentId])
+}
+
+model PostView {
+  id        String   @id @default(cuid())
+  postId    String
+  viewerKey String
+  viewedAt  DateTime @default(now())
+
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, viewerKey])
+  @@index([postId])
+  @@index([viewedAt])
 }
 
 model PostLike {

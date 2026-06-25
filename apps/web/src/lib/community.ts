@@ -36,3 +36,7 @@ export function authorName(author: {
 }) {
   return author.displayName ?? author.username;
 }
+
+export function userProfilePath(username: string) {
+  return `/users/${encodeURIComponent(username)}`;
+}

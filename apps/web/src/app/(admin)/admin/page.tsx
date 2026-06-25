@@ -50,7 +50,7 @@ export default function AdminDashboardPage() {
           {items.map((item) => (
             <div key={item.label} className="admin-stat-card">
               <p className="admin-stat-label">{item.label}</p>
-              <p className="admin-stat-value">{item.value.toLocaleString("ko-KR")}</p>
+              <p className="admin-stat-value">{(item.value ?? 0).toLocaleString("ko-KR")}</p>
             </div>
           ))}
         </div>

@@ -7,7 +7,9 @@ import {
   Patch,
   Post,
   Query,
+  Req,
 } from '@nestjs/common';
+import type { Request } from 'express';
 import { Public } from '../common/decorators/public.decorator';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { BoardsService } from './boards.service';
@@ -46,8 +48,15 @@ export class BoardsController {
     @Param('slug') slug: string,
     @Param('postId') postId: string,
     @CurrentUser() user?: { id: string },
+    @Req() req?: Request,
   ) {
-    return this.boardsService.getPost(slug, postId, user?.id);
+    const viewerKey = user?.id
+      ? `user:${user.id}`
+      : req?.ip
+        ? `ip:${req.ip}`
+        : undefined;
+
+    return this.boardsService.getPost(slug, postId, user?.id, viewerKey);
   }
 
   @Post(':slug/posts')

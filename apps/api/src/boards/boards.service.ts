@@ -13,6 +13,7 @@ const authorSelect = {
   id: true,
   username: true,
   displayName: true,
+  avatarUrl: true,
 } as const;
 
 @Injectable()
@@ -77,7 +78,12 @@ export class BoardsService {
     };
   }
 
-  async getPost(boardSlug: string, postId: string, userId?: string) {
+  async getPost(
+    boardSlug: string,
+    postId: string,
+    userId?: string,
+    viewerKey?: string,
+  ) {
     const post = await this.prisma.post.findFirst({
       where: {
         id: postId,
@@ -107,10 +113,9 @@ export class BoardsService {
       throw new NotFoundException('Post not found');
     }
 
-    await this.prisma.post.update({
-      where: { id: post.id },
-      data: { viewCount: { increment: 1 } },
-    });
+    if (viewerKey) {
+      await this.recordView(post.id, viewerKey);
+    }
 
     let likedByMe = false;
     if (userId) {
@@ -278,6 +283,30 @@ export class BoardsService {
 
     await this.prisma.comment.delete({ where: { id: comment.id } });
     return { success: true };
+  }
+
+  private async recordView(postId: string, viewerKey: string) {
+    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
+
+    const existing = await this.prisma.postView.findUnique({
+      where: { postId_viewerKey: { postId, viewerKey } },
+    });
+
+    if (existing && existing.viewedAt > oneHourAgo) {
+      return;
+    }
+
+    await this.prisma.$transaction([
+      this.prisma.postView.upsert({
+        where: { postId_viewerKey: { postId, viewerKey } },
+        create: { postId, viewerKey },
+        update: { viewedAt: new Date() },
+      }),
+      this.prisma.post.update({
+        where: { id: postId },
+        data: { viewCount: { increment: 1 } },
+      }),
+    ]);
   }
 
   private isModerator(role: string) {

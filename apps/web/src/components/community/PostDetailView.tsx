@@ -12,8 +12,9 @@ import {
   type BoardComment,
   type BoardPostDetail,
 } from "@/lib/api";
-import { authorName, formatBoardDate } from "@/lib/community";
+import { formatBoardDate } from "@/lib/community";
 import { getAccessToken, useAuth } from "@/providers/AuthProvider";
+import { UserProfileLink } from "@/components/user/UserProfileLink";
 
 function canModerate(role?: string) {
   return role === "OWNER" || role === "ADMIN" || role === "MODERATOR";
@@ -99,14 +100,18 @@ function CommentItem({
 
   return (
     <div className={`board-comment${depth > 0 ? " board-comment--reply" : ""}`}>
-      <div className="board-comment-head">
-        <span className="board-comment-author">
-          {authorName(comment.author)}
-        </span>
-        <span className="board-comment-date">
-          {formatBoardDate(comment.createdAt)}
-        </span>
-      </div>
+      <div className="board-comment-layout">
+        <UserProfileLink
+          user={comment.author}
+          size="xs"
+          className="board-comment-profile"
+        />
+        <div className="board-comment-main">
+          <div className="board-comment-head">
+            <span className="board-comment-date">
+              {formatBoardDate(comment.createdAt)}
+            </span>
+          </div>
 
       {editing ? (
         <div className="board-comment-edit">
@@ -193,6 +198,8 @@ function CommentItem({
           </button>
         </form>
       )}
+        </div>
+      </div>
 
       {comment.replies?.map((reply) => (
         <CommentItem
@@ -316,10 +323,10 @@ export function PostDetailView({
           {post.title}
         </h1>
         <div className="board-post-meta">
-          <span>{authorName(post.author)}</span>
-          <span>·</span>
+          <UserProfileLink user={post.author} size="xs" />
+          <span className="board-post-meta-sep">·</span>
           <span>{formatBoardDate(post.createdAt)}</span>
-          <span>·</span>
+          <span className="board-post-meta-sep">·</span>
           <span>조회 {post.viewCount}</span>
         </div>
       </header>
