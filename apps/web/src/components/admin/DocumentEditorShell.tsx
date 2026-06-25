@@ -5,7 +5,6 @@ import { ArrowLeft, Check, ExternalLink, Loader2, Trash2 } from "lucide-react";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { NotionEditor } from "./notion/NotionEditor";
-import { AdminButton } from "./ui/AdminButton";
 
 export type SaveState = "idle" | "saving" | "saved" | "error";
 
@@ -34,6 +33,38 @@ type DocumentEditorShellProps = {
   loadingMessage?: string;
 };
 
+function SaveStatus({
+  saveState,
+  isDirty,
+}: {
+  saveState: SaveState;
+  isDirty: boolean;
+}) {
+  if (saveState === "saving") {
+    return (
+      <span className="notion-status notion-status--saving">
+        <Loader2 className="h-3 w-3 animate-spin" />
+        저장 중
+      </span>
+    );
+  }
+  if (saveState === "saved") {
+    return (
+      <span className="notion-status notion-status--saved">
+        <Check className="h-3 w-3" />
+        저장됨
+      </span>
+    );
+  }
+  if (saveState === "error") {
+    return <span className="notion-status notion-status--error">저장 실패</span>;
+  }
+  if (isDirty) {
+    return <span className="notion-status notion-status--dirty">수정됨</span>;
+  }
+  return null;
+}
+
 export function DocumentEditorShell({
   backHref,
   title,
@@ -61,9 +92,10 @@ export function DocumentEditorShell({
   if (loading) {
     return (
       <div className="notion-page">
-        <div className="admin-loading">
+        <div className="notion-ambient" aria-hidden />
+        <div className="notion-loading">
           <span className="admin-spinner" />
-          {loadingMessage}
+          <span>{loadingMessage}</span>
         </div>
       </div>
     );
@@ -72,12 +104,13 @@ export function DocumentEditorShell({
   if (notFound) {
     return (
       <div className="notion-page">
-        <div className="notion-toolbar">
+        <div className="notion-ambient" aria-hidden />
+        <header className="notion-toolbar">
           <Link href={backHref} className="notion-toolbar-back">
             <ArrowLeft className="h-4 w-4" strokeWidth={1.5} />
             목록
           </Link>
-        </div>
+        </header>
         <p className="notion-empty">{emptyMessage}</p>
       </div>
     );
@@ -85,86 +118,93 @@ export function DocumentEditorShell({
 
   return (
     <div className="notion-page">
+      <div className="notion-ambient" aria-hidden />
+
       <header className="notion-toolbar">
-        <Link href={backHref} className="notion-toolbar-back">
-          <ArrowLeft className="h-4 w-4" strokeWidth={1.5} />
-          목록
-        </Link>
+        <div className="notion-toolbar-start">
+          <Link href={backHref} className="notion-toolbar-back">
+            <ArrowLeft className="h-4 w-4" strokeWidth={1.5} />
+            목록
+          </Link>
+          <SaveStatus saveState={saveState} isDirty={isDirty} />
+        </div>
 
         <div className="notion-toolbar-actions">
-          {toolbar}
+          {toolbar && <div className="notion-toolbar-meta">{toolbar}</div>}
 
-          <span className="notion-toolbar-status">
-            {saveState === "saving" && (
-              <>
-                <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                저장 중
-              </>
+          <div className="notion-toolbar-cta">
+            {previewHref && (
+              <Link
+                href={previewHref}
+                target="_blank"
+                className="notion-btn notion-btn-ghost"
+              >
+                <ExternalLink className="h-3.5 w-3.5" />
+                미리보기
+              </Link>
             )}
-            {saveState === "saved" && (
-              <>
-                <Check className="h-3.5 w-3.5" />
-                저장됨
-              </>
-            )}
-            {saveState === "error" && "저장 실패"}
-            {saveState === "idle" && isDirty && "수정됨"}
-          </span>
 
-          {previewHref && (
-            <Link
-              href={previewHref}
-              target="_blank"
-              className="admin-btn admin-btn-ghost"
+            <button
+              type="button"
+              className="notion-btn notion-btn-primary"
+              onClick={onSave}
+              disabled={saveState === "saving"}
             >
-              <ExternalLink className="h-3.5 w-3.5" />
-              미리보기
-            </Link>
-          )}
+              저장
+            </button>
 
-          <AdminButton
-            variant="primary"
-            onClick={onSave}
-            disabled={saveState === "saving"}
-          >
-            저장
-          </AdminButton>
-
-          {onDelete && (
-            <AdminButton variant="danger" onClick={onDelete}>
-              <Trash2 className="h-3.5 w-3.5" />
-              삭제
-            </AdminButton>
-          )}
+            {onDelete && (
+              <button
+                type="button"
+                className="notion-btn notion-btn-danger"
+                onClick={onDelete}
+                aria-label="삭제"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+              </button>
+            )}
+          </div>
         </div>
       </header>
 
       <article className="notion-document">
-        <input
-          className="notion-title"
-          value={title}
-          onChange={(e) => onTitleChange(e.target.value)}
-          placeholder={titlePlaceholder}
-          aria-label={titleAriaLabel}
-        />
-        {onSubtitleChange && (
+        <header className="notion-doc-header">
           <input
-            className="notion-subtitle"
-            value={subtitle ?? ""}
-            onChange={(e) => onSubtitleChange(e.target.value)}
-            placeholder={subtitlePlaceholder}
-            aria-label={subtitleAriaLabel}
+            className="notion-title"
+            value={title}
+            onChange={(e) => onTitleChange(e.target.value)}
+            placeholder={titlePlaceholder}
+            aria-label={titleAriaLabel}
           />
-        )}
-        <p className="notion-hint">
-          <kbd>/</kbd> 로 블록 추가 · 저장 시 Markdown으로 게시됩니다 ·{" "}
-          <kbd>⌘</kbd>+<kbd>S</kbd> 저장
-        </p>
-        <NotionEditor
-          key={editorKey}
-          initialContent={blocks}
-          onChange={onBlocksChange}
-        />
+          {onSubtitleChange && (
+            <input
+              className="notion-subtitle"
+              value={subtitle ?? ""}
+              onChange={(e) => onSubtitleChange(e.target.value)}
+              placeholder={subtitlePlaceholder}
+              aria-label={subtitleAriaLabel}
+            />
+          )}
+        </header>
+
+        <div className="notion-shortcuts" aria-label="단축키 안내">
+          <span className="notion-shortcut">
+            <kbd>/</kbd> 블록 추가
+          </span>
+          <span className="notion-shortcut">
+            드래그 <kbd>B</kbd>
+            <kbd>I</kbd>
+            <kbd>⌘S</kbd> 서식 · 저장
+          </span>
+        </div>
+
+        <div className="notion-editor-surface">
+          <NotionEditor
+            key={editorKey}
+            initialContent={blocks}
+            onChange={onBlocksChange}
+          />
+        </div>
       </article>
     </div>
   );

@@ -25,20 +25,34 @@ export function DocArticle({
 }: DocArticleProps) {
   return (
     <article className="doc-page">
+      <div className="doc-ambient" aria-hidden />
+
       <FadeIn>
         <header className="doc-header">
           <Link href={backHref} className="doc-back">
-            ‹ {backLabel}
+            <span className="doc-back-icon" aria-hidden>
+              ‹
+            </span>
+            {backLabel}
           </Link>
-          {eyebrow && <p className="text-eyebrow mt-8">{eyebrow}</p>}
+
+          {eyebrow && (
+            <p className="doc-eyebrow">
+              <span className="doc-eyebrow-dot" aria-hidden />
+              {eyebrow}
+            </p>
+          )}
+
           <h1 className="doc-title">{title}</h1>
           {lead && <p className="doc-lead">{lead}</p>}
-          {meta && <p className="text-caption mt-4">{meta}</p>}
+          {meta && <p className="doc-meta">{meta}</p>}
         </header>
       </FadeIn>
 
       <FadeIn delay={0.08}>
-        <DocumentContent content={content} />
+        <div className="doc-body">
+          <DocumentContent content={content} />
+        </div>
       </FadeIn>
     </article>
   );
