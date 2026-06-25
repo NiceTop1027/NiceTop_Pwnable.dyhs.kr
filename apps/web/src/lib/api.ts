@@ -136,6 +136,19 @@ export type Notice = {
   author: { username: string; displayName: string | null };
 };
 
+export type NotificationItem = {
+  id: string;
+  title: string;
+  publishedAt: string;
+  isPinned: boolean;
+  isRead: boolean;
+};
+
+export type NotificationSummary = {
+  unreadCount: number;
+  items: NotificationItem[];
+};
+
 export type CtfEvent = {
   id: string;
   title: string;
@@ -337,6 +350,18 @@ export const api = {
     ),
 
   notice: (id: string) => apiFetch<Notice>(`/notices/${id}`),
+
+  notificationsRecent: () =>
+    apiFetch<NotificationSummary>("/notifications/recent"),
+
+  notifications: (token: string) =>
+    apiFetch<NotificationSummary>("/notifications", { token }),
+
+  markAllNotificationsRead: (token: string) =>
+    apiFetch("/notifications/read-all", { method: "POST", token }),
+
+  markNotificationRead: (token: string, noticeId: string) =>
+    apiFetch(`/notifications/read/${noticeId}`, { method: "POST", token }),
 };
 
 export const adminApi = {

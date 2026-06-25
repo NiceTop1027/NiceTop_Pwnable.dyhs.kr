@@ -8,6 +8,7 @@ export class BoardsService {
 
   async getBoards() {
     return this.prisma.board.findMany({
+      where: { type: { not: 'NOTICE' } },
       orderBy: { order: 'asc' },
       include: {
         _count: { select: { posts: true } },
@@ -20,7 +21,7 @@ export class BoardsService {
       where: { slug: boardSlug },
     });
 
-    if (!board) {
+    if (!board || board.type === 'NOTICE') {
       throw new NotFoundException('Board not found');
     }
 
@@ -106,7 +107,7 @@ export class BoardsService {
       where: { slug: boardSlug },
     });
 
-    if (!board) {
+    if (!board || board.type === 'NOTICE') {
       throw new NotFoundException('Board not found');
     }
 

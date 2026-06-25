@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { api } from "@/lib/api";
 import { DocArticle } from "@/components/content/DocArticle";
+import { NoticeReadMarker } from "@/components/notices/NoticeReadMarker";
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -25,12 +26,15 @@ export default async function NoticePage({ params }: Props) {
   }
 
   return (
-    <DocArticle
-      backHref="/notices"
-      backLabel="공지사항"
-      title={notice.title}
-      meta={`${notice.author.displayName ?? notice.author.username} · ${new Date(notice.publishedAt).toLocaleDateString("ko-KR")}`}
-      content={notice.content}
-    />
+    <>
+      <NoticeReadMarker noticeId={notice.id} publishedAt={notice.publishedAt} />
+      <DocArticle
+        backHref="/notices"
+        backLabel="공지사항"
+        title={notice.title}
+        meta={`${notice.author.displayName ?? notice.author.username} · ${new Date(notice.publishedAt).toLocaleDateString("ko-KR")}`}
+        content={notice.content}
+      />
+    </>
   );
 }

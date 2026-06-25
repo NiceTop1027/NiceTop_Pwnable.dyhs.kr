@@ -10,6 +10,7 @@ import { ChallengesModule } from './challenges/challenges.module';
 import { CurriculaModule } from './curricula/curricula.module';
 import { BoardsModule } from './boards/boards.module';
 import { NoticesModule } from './notices/notices.module';
+import { NotificationsModule } from './notifications/notifications.module';
 import { CtfModule } from './ctf/ctf.module';
 import { AdminModule } from './admin/admin.module';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
@@ -30,6 +31,7 @@ import { RolesGuard } from './common/guards/roles.guard';
     CurriculaModule,
     BoardsModule,
     NoticesModule,
+    NotificationsModule,
     CtfModule,
     AdminModule,
   ],

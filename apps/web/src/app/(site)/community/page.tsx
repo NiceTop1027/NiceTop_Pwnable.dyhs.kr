@@ -19,15 +19,17 @@ export default async function CommunityPage() {
       <FadeIn>
         <PageHeader
           title="커뮤니티"
-          description="질문하고, 공유하고, 함께 성장하는 보안 학습 커뮤니티"
+          description="Q&A, 스터디, 자유게시판 — 공지는 상단 알림과 공지사항에서 확인하세요"
         />
       </FadeIn>
 
       <FadeIn delay={0.1}>
         <p className="text-eyebrow mb-6">게시판</p>
-        {boards.length > 0 ? (
+        {boards.filter((b) => b.slug !== "notice").length > 0 ? (
           <PreviewList
-            items={boards.map((b) => ({
+            items={boards
+              .filter((b) => b.slug !== "notice")
+              .map((b) => ({
               title: b.name,
               desc: b.description ?? undefined,
               meta: `${b._count.posts}개 글`,

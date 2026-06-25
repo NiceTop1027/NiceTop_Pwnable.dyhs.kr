@@ -202,11 +202,12 @@ async function main() {
 
   console.log(`Seeded ${itemCount} curriculum items`);
 
+  await prisma.board.deleteMany({ where: { type: BoardType.NOTICE } });
+
   const boards = [
     { name: '자유게시판', slug: 'free', type: BoardType.FREE, description: '자유롭게 소통하는 게시판', order: 1 },
     { name: 'Q&A', slug: 'qna', type: BoardType.QNA, description: '질문과 답변 게시판', order: 2 },
     { name: '스터디', slug: 'study', type: BoardType.STUDY, description: '스터디 모집 및 정보 공유', order: 3 },
-    { name: '공지사항', slug: 'notice', type: BoardType.NOTICE, description: '공식 공지사항', order: 4 },
   ];
 
   for (const board of boards) {

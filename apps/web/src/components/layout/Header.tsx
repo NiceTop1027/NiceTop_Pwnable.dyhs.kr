@@ -7,6 +7,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Menu, X } from "lucide-react";
 import { mainNav } from "@/lib/navigation";
 import { HeaderAuth } from "@/components/layout/HeaderAuth";
+import { NotificationBell } from "@/components/layout/NotificationBell";
 
 export default function Header() {
   const pathname = usePathname();
@@ -55,7 +56,8 @@ export default function Header() {
           ))}
         </nav>
 
-        <div className="hidden items-center gap-6 md:flex">
+        <div className="hidden items-center gap-5 md:flex">
+          <NotificationBell />
           <HeaderAuth />
         </div>
 
@@ -91,6 +93,10 @@ export default function Header() {
                   {item.label}
                 </Link>
               ))}
+              <div className="mt-6 flex items-center gap-4 border-b border-[var(--divider)] pb-4">
+                <NotificationBell />
+                <span className="text-sm text-[var(--text-secondary)]">알림</span>
+              </div>
               <HeaderAuth mobile />
             </nav>
           </motion.div>

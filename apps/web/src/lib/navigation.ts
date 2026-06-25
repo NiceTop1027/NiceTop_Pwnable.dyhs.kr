@@ -10,7 +10,7 @@ export const mainNav: NavItem[] = [
   { label: "워게임", href: "/wargame", description: "실습 문제" },
   { label: "CTF", href: "/ctf", description: "대회 & 챌린지" },
   { label: "랭킹", href: "/ranking", description: "리더보드" },
-  { label: "커뮤니티", href: "/community", description: "게시판 & 토론" },
+  { label: "커뮤니티", href: "/community", description: "Q&A · 스터디 · 자유게시판" },
   { label: "공지사항", href: "/notices", description: "플랫폼 소식" },
   { label: "프로필", href: "/profile", description: "내 정보" },
   { label: "관리자", href: "/admin", description: "관리 콘솔" },
