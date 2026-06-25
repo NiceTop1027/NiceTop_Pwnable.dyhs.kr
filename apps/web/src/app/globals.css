@@ -1480,6 +1480,16 @@ a {
   accent-color: var(--text);
 }
 
+.notion-toolbar-input {
+  width: 5.5rem;
+  text-align: center;
+}
+
+.notion-toolbar-input-wide {
+  width: 10rem;
+  text-align: left;
+}
+
 .notion-hint {
   margin: 0.75rem 0 1.5rem;
   font-size: 0.8125rem;

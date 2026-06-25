@@ -3,7 +3,7 @@
 import type { PartialBlock } from "@blocknote/core";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
-import { adminApi, type AdminLecture } from "@/lib/api";
+import { adminApi, type AdminNotice } from "@/lib/api";
 import { blocksToMarkdown, parseMarkdownToBlocks } from "@/lib/blocknote-markdown";
 import { getAccessToken } from "@/providers/AuthProvider";
 import {
@@ -11,16 +11,11 @@ import {
   type SaveState,
 } from "./DocumentEditorShell";
 
-type Category = { id: string; name: string; slug: string };
-
-export function LectureEditor({ lectureId }: { lectureId: string }) {
+export function NoticeEditor({ noticeId }: { noticeId: string }) {
   const router = useRouter();
-  const [lecture, setLecture] = useState<AdminLecture | null>(null);
-  const [categories, setCategories] = useState<Category[]>([]);
+  const [notice, setNotice] = useState<AdminNotice | null>(null);
   const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [categoryId, setCategoryId] = useState("");
-  const [isPublished, setIsPublished] = useState(false);
+  const [isPinned, setIsPinned] = useState(false);
   const [blocks, setBlocks] = useState<PartialBlock[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [saveState, setSaveState] = useState<SaveState>("idle");
@@ -31,47 +26,40 @@ export function LectureEditor({ lectureId }: { lectureId: string }) {
     const token = getAccessToken();
     if (!token) return;
 
-    Promise.all([
-      adminApi.lectureCategories(token),
-      adminApi.getLecture(token, lectureId),
-    ])
-      .then(([cats, data]) => {
-        setCategories(cats);
-        setLecture(data);
+    adminApi
+      .getNotice(token, noticeId)
+      .then((data) => {
+        setNotice(data);
         setTitle(data.title);
-        setDescription(data.description ?? "");
-        setCategoryId(data.categoryId);
-        setIsPublished(data.isPublished);
+        setIsPinned(data.isPinned);
         setBlocks(parseMarkdownToBlocks(data.content));
         setEditorKey((k) => k + 1);
         setIsDirty(false);
       })
-      .catch(() => setLecture(null))
+      .catch(() => setNotice(null))
       .finally(() => setLoading(false));
-  }, [lectureId]);
+  }, [noticeId]);
 
   const save = useCallback(async () => {
     const token = getAccessToken();
-    if (!token || !lecture) return;
+    if (!token || !notice) return;
 
     setSaveState("saving");
     try {
       const content = blocksToMarkdown(blocks ?? []);
-      const updated = await adminApi.updateLecture(token, lectureId, {
+      const updated = await adminApi.updateNotice(token, noticeId, {
         title: title.trim() || "제목 없음",
-        description: description.trim() || undefined,
-        categoryId,
         content,
-        isPublished,
+        isPinned,
       });
-      setLecture(updated);
+      setNotice(updated);
       setIsDirty(false);
       setSaveState("saved");
       setTimeout(() => setSaveState("idle"), 2000);
     } catch {
       setSaveState("error");
     }
-  }, [blocks, categoryId, description, isPublished, lecture, lectureId, title]);
+  }, [blocks, isPinned, notice, noticeId, title]);
 
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
@@ -85,24 +73,19 @@ export function LectureEditor({ lectureId }: { lectureId: string }) {
   }, [isDirty, save]);
 
   async function handleDelete() {
-    if (!confirm("이 문서를 삭제할까요?")) return;
+    if (!confirm("이 공지를 삭제할까요?")) return;
     const token = getAccessToken();
     if (!token) return;
-    await adminApi.deleteLecture(token, lectureId);
-    router.push("/admin/curriculum");
+    await adminApi.deleteNotice(token, noticeId);
+    router.push("/admin/notices");
   }
 
   return (
     <DocumentEditorShell
-      backHref="/admin/curriculum"
+      backHref="/admin/notices"
       title={title}
       onTitleChange={(v) => {
         setTitle(v);
-        setIsDirty(true);
-      }}
-      subtitle={description}
-      onSubtitleChange={(v) => {
-        setDescription(v);
         setIsDirty(true);
       }}
       blocks={blocks}
@@ -115,39 +98,22 @@ export function LectureEditor({ lectureId }: { lectureId: string }) {
       isDirty={isDirty}
       onSave={save}
       onDelete={handleDelete}
-      previewHref={isPublished && lecture ? `/curriculum/${lecture.slug}` : undefined}
+      previewHref={notice ? `/notices/${notice.id}` : undefined}
       loading={loading}
-      notFound={!loading && !lecture}
+      notFound={!loading && !notice}
+      emptyMessage="공지를 찾을 수 없습니다"
       toolbar={
-        <>
-          <select
-            value={categoryId}
+        <label className="notion-toolbar-check">
+          <input
+            type="checkbox"
+            checked={isPinned}
             onChange={(e) => {
-              setCategoryId(e.target.value);
+              setIsPinned(e.target.checked);
               setIsDirty(true);
             }}
-            className="notion-toolbar-select"
-            aria-label="카테고리"
-          >
-            {categories.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
-            ))}
-          </select>
-
-          <label className="notion-toolbar-check">
-            <input
-              type="checkbox"
-              checked={isPublished}
-              onChange={(e) => {
-                setIsPublished(e.target.checked);
-                setIsDirty(true);
-              }}
-            />
-            공개
-          </label>
-        </>
+          />
+          상단 고정
+        </label>
       }
     />
   );

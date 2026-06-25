@@ -3,7 +3,6 @@ export type CurriculumTrack = {
   name: string;
   label: string;
   desc: string;
-  content?: unknown;
   steps: { title: string; desc?: string; href?: string }[];
 };
 
@@ -85,7 +84,6 @@ export function mapCurriculaToTracks(
     slug: string;
     title: string;
     description: string | null;
-    content?: unknown;
     tier: string;
     items: {
       lecture: {
@@ -105,7 +103,6 @@ export function mapCurriculaToTracks(
     name: c.tier,
     label: tierLabels[c.tier] ?? c.title,
     desc: c.description ?? "",
-    content: c.content,
     steps: c.items.map((item) => {
       if (item.lecture) {
         return {

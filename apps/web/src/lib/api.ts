@@ -181,6 +181,21 @@ export type AdminLecture = {
   updatedAt: string;
 };
 
+export type AdminNotice = Notice;
+
+export type AdminChallenge = {
+  id: string;
+  title: string;
+  slug: string;
+  description: string;
+  category: string;
+  difficulty: string;
+  points: number;
+  dockerImage: string | null;
+  isPublished: boolean;
+  updatedAt: string;
+};
+
 export const api = {
   health: () => apiFetch<{ status: string }>("/health"),
 
@@ -381,14 +396,17 @@ export const adminApi = {
       isPublished?: boolean;
     },
   ) =>
-    apiFetch("/admin/challenges", {
+    apiFetch<AdminChallenge>("/admin/challenges", {
       method: "POST",
       body: JSON.stringify(data),
       token,
     }),
 
+  getChallenge: (token: string, id: string) =>
+    apiFetch<AdminChallenge>(`/admin/challenges/${id}`, { token }),
+
   updateChallenge: (token: string, id: string, data: Record<string, unknown>) =>
-    apiFetch(`/admin/challenges/${id}`, {
+    apiFetch<AdminChallenge>(`/admin/challenges/${id}`, {
       method: "PATCH",
       body: JSON.stringify(data),
       token,
@@ -403,8 +421,22 @@ export const adminApi = {
     token: string,
     data: { title: string; content: string; isPinned?: boolean },
   ) =>
-    apiFetch("/admin/notices", {
+    apiFetch<AdminNotice>("/admin/notices", {
       method: "POST",
+      body: JSON.stringify(data),
+      token,
+    }),
+
+  getNotice: (token: string, id: string) =>
+    apiFetch<AdminNotice>(`/admin/notices/${id}`, { token }),
+
+  updateNotice: (
+    token: string,
+    id: string,
+    data: { title?: string; content?: string; isPinned?: boolean },
+  ) =>
+    apiFetch<AdminNotice>(`/admin/notices/${id}`, {
+      method: "PATCH",
       body: JSON.stringify(data),
       token,
     }),

@@ -19,7 +19,6 @@ export class CreateChallengeDto {
   slug?: string;
 
   @IsString()
-  @MinLength(1)
   description!: string;
 
   @IsEnum(ChallengeCategory)

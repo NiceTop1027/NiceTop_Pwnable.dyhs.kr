@@ -1,8 +1,4 @@
-"use client";
-
-import Link from "next/link";
-import { FadeIn } from "@/components/pages/FadeIn";
-import { DocumentContent } from "@/components/content/DocumentContent";
+import { DocArticle } from "@/components/content/DocArticle";
 
 type LectureArticleProps = {
   title: string;
@@ -18,21 +14,13 @@ export function LectureArticle({
   content,
 }: LectureArticleProps) {
   return (
-    <article className="doc-page">
-      <FadeIn>
-        <header className="doc-header">
-          <Link href="/curriculum" className="doc-back">
-            ‹ 커리큘럼
-          </Link>
-          <p className="text-eyebrow mt-8">{category}</p>
-          <h1 className="doc-title">{title}</h1>
-          {description && <p className="doc-lead">{description}</p>}
-        </header>
-      </FadeIn>
-
-      <FadeIn delay={0.08}>
-        <DocumentContent content={content} />
-      </FadeIn>
-    </article>
+    <DocArticle
+      backHref="/curriculum"
+      backLabel="커리큘럼"
+      eyebrow={category}
+      title={title}
+      lead={description}
+      content={content}
+    />
   );
 }

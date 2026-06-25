@@ -27,7 +27,7 @@ export const adminNav: AdminNavItem[] = [
     href: "/admin/challenges",
     label: "문제",
     icon: Puzzle,
-    description: "워게임 문제를 생성하고 관리합니다",
+    description: "Notion 스타일 에디터로 워게임 문제를 작성합니다",
   },
   {
     href: "/admin/curriculum",
@@ -39,7 +39,7 @@ export const adminNav: AdminNavItem[] = [
     href: "/admin/notices",
     label: "공지",
     icon: Bell,
-    description: "공지사항을 등록하고 관리합니다",
+    description: "Notion 스타일 에디터로 공지를 작성합니다",
   },
   {
     href: "/admin/users",

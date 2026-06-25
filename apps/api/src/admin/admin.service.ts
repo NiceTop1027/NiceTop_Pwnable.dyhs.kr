@@ -13,6 +13,7 @@ import { UpdateChallengeDto } from './dto/update-challenge.dto';
 import { CreateLectureDto } from './dto/create-lecture.dto';
 import { UpdateLectureDto } from './dto/update-lecture.dto';
 import { CreateNoticeDto } from './dto/create-notice.dto';
+import { UpdateNoticeDto } from './dto/update-notice.dto';
 import { CreateCurriculumDto } from './dto/create-curriculum.dto';
 import { UpdateCurriculumDto } from './dto/update-curriculum.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -271,6 +272,30 @@ export class AdminService {
       challenge.id,
       { title: challenge.title, slug: challenge.slug },
     );
+    return this.getChallenge(challenge.id);
+  }
+
+  async getChallenge(id: string) {
+    const challenge = await this.prisma.challenge.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        title: true,
+        slug: true,
+        description: true,
+        category: true,
+        difficulty: true,
+        points: true,
+        dockerImage: true,
+        isPublished: true,
+        updatedAt: true,
+      },
+    });
+
+    if (!challenge) {
+      throw new NotFoundException('Challenge not found');
+    }
+
     return challenge;
   }
 
@@ -298,7 +323,7 @@ export class AdminService {
       id,
       { ...dto, flag: dto.flag ? '[redacted]' : undefined },
     );
-    return challenge;
+    return this.getChallenge(id);
   }
 
   async deleteChallenge(adminId: string, id: string) {
@@ -454,6 +479,45 @@ export class AdminService {
     });
 
     await this.adminLog.log(adminId, 'notice.create', 'notice', notice.id, {
+      title: notice.title,
+    });
+    return notice;
+  }
+
+  async getNotice(id: string) {
+    const notice = await this.prisma.notice.findUnique({
+      where: { id },
+      include: {
+        author: { select: { username: true, displayName: true } },
+      },
+    });
+
+    if (!notice) {
+      throw new NotFoundException('Notice not found');
+    }
+
+    return notice;
+  }
+
+  async updateNotice(adminId: string, id: string, dto: UpdateNoticeDto) {
+    const existing = await this.prisma.notice.findUnique({ where: { id } });
+    if (!existing) {
+      throw new NotFoundException('Notice not found');
+    }
+
+    const notice = await this.prisma.notice.update({
+      where: { id },
+      data: {
+        ...(dto.title !== undefined && { title: dto.title }),
+        ...(dto.content !== undefined && { content: dto.content }),
+        ...(dto.isPinned !== undefined && { isPinned: dto.isPinned }),
+      },
+      include: {
+        author: { select: { username: true, displayName: true } },
+      },
+    });
+
+    await this.adminLog.log(adminId, 'notice.update', 'notice', id, {
       title: notice.title,
     });
     return notice;

@@ -1,20 +1,10 @@
 "use client";
 
 import { MarkdownContent } from "@/components/content/MarkdownContent";
-import { CurriculumRichContent } from "@/components/notion/CurriculumRichContent";
-
-function isBlockContent(content: unknown): content is unknown[] {
-  return Array.isArray(content) && content.length > 0;
-}
+import { normalizeContentToMarkdown } from "@/lib/blocknote-markdown";
 
 export function DocumentContent({ content }: { content: unknown }) {
-  if (typeof content === "string" && content.trim()) {
-    return <MarkdownContent content={content} />;
-  }
-
-  if (isBlockContent(content)) {
-    return <CurriculumRichContent content={content} />;
-  }
-
-  return null;
+  const markdown = normalizeContentToMarkdown(content);
+  if (!markdown.trim()) return null;
+  return <MarkdownContent content={markdown} />;
 }

@@ -29,3 +29,12 @@ export function blocksToMarkdown(blocks: PartialBlock[]): string {
   if (!blocks.length) return "";
   return editor().blocksToMarkdownLossy(blocks);
 }
+
+/** 문자열·레거시 BlockNote JSON을 Markdown 문자열로 통일 */
+export function normalizeContentToMarkdown(content: unknown): string {
+  if (typeof content === "string") return content;
+  if (Array.isArray(content) && content.length > 0) {
+    return blocksToMarkdown(content as PartialBlock[]);
+  }
+  return "";
+}

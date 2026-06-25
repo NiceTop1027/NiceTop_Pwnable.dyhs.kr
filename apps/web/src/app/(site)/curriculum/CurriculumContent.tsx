@@ -27,18 +27,13 @@ function TrackSection({ track, index }: { track: CurriculumTrack; index: number 
           <div>
             <p className="text-eyebrow">{track.name}</p>
             <h2 className="curriculum-track-title">{track.label} 트랙</h2>
-            {track.desc && !track.content && (
-              <p className="curriculum-track-desc">{track.desc}</p>
-            )}
           </div>
         </header>
 
-        {track.content ? (
+        {track.desc && (
           <div className="curriculum-track-body">
-            <DocumentContent content={track.content} />
+            <DocumentContent content={track.desc} />
           </div>
-        ) : (
-          track.desc && <p className="curriculum-track-desc curriculum-track-desc-standalone">{track.desc}</p>
         )}
 
         {track.steps.length > 0 ? (

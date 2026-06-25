@@ -16,6 +16,7 @@ import { UpdateChallengeDto } from './dto/update-challenge.dto';
 import { CreateLectureDto } from './dto/create-lecture.dto';
 import { UpdateLectureDto } from './dto/update-lecture.dto';
 import { CreateNoticeDto } from './dto/create-notice.dto';
+import { UpdateNoticeDto } from './dto/update-notice.dto';
 import { CreateCurriculumDto } from './dto/create-curriculum.dto';
 import { UpdateCurriculumDto } from './dto/update-curriculum.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -105,6 +106,11 @@ export class AdminController {
     return this.adminService.createChallenge(admin.id, dto);
   }
 
+  @Get('challenges/:id')
+  getChallenge(@Param('id') id: string) {
+    return this.adminService.getChallenge(id);
+  }
+
   @Patch('challenges/:id')
   updateChallenge(
     @CurrentUser() admin: { id: string },
@@ -177,6 +183,20 @@ export class AdminController {
     @Body() dto: CreateNoticeDto,
   ) {
     return this.adminService.createNotice(admin.id, dto);
+  }
+
+  @Get('notices/:id')
+  getNotice(@Param('id') id: string) {
+    return this.adminService.getNotice(id);
+  }
+
+  @Patch('notices/:id')
+  updateNotice(
+    @CurrentUser() admin: { id: string },
+    @Param('id') id: string,
+    @Body() dto: UpdateNoticeDto,
+  ) {
+    return this.adminService.updateNotice(admin.id, id, dto);
   }
 
   @Delete('notices/:id')
