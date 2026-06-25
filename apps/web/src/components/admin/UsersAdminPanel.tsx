@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { adminApi } from "@/lib/api";
 import { getAccessToken } from "@/providers/AuthProvider";
-import { UserNameWithBadge } from "@/components/ui/UserNameWithBadge";
 import { AdminBadge } from "./ui/AdminBadge";
 import { AdminButton } from "./ui/AdminButton";
 import { AdminCard } from "./ui/AdminCard";
@@ -61,12 +60,7 @@ export function UsersAdminPanel() {
         users.map((u) => (
           <AdminRow
             key={u.id}
-            title={
-              <UserNameWithBadge
-                name={u.displayName ?? u.username}
-                role={u.role}
-              />
-            }
+            title={u.displayName ?? u.username}
             meta={`@${u.username} · ${u.score.toLocaleString("ko-KR")} XP · ${u._count.solves} solved`}
             badge={
               !u.isActive ? <AdminBadge variant="danger">정지</AdminBadge> : undefined

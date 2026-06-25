@@ -17,7 +17,6 @@ import { AuthField } from "@/components/auth/AuthField";
 import { AuthAlert } from "@/components/auth/AuthAlert";
 import { PasswordStrength } from "@/components/auth/PasswordStrength";
 import { ProfileAvatar } from "@/components/auth/ProfileAvatar";
-import { UserRoleBadge } from "@/components/ui/UserRoleBadge";
 import { isStaffRole } from "@/lib/roles";
 
 type Tab = "overview" | "profile" | "security";
@@ -195,12 +194,7 @@ export function ProfileContent() {
           }}
         />
         <div className="profile-hero-body">
-          <h1 className="profile-hero-name">
-            <span className="profile-hero-name-row">
-              {displayName}
-              <UserRoleBadge role={user.role} />
-            </span>
-          </h1>
+          <h1 className="profile-hero-name">{displayName}</h1>
           <p className="profile-hero-meta">@{user.username}</p>
           <div className="profile-xp-row">
             <span>Lv.{xp.level}</span>

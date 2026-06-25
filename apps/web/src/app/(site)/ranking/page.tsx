@@ -1,5 +1,4 @@
 import PageHeader from "@/components/ui/PageHeader";
-import { UserNameWithBadge } from "@/components/ui/UserNameWithBadge";
 import { FadeIn } from "@/components/pages/FadeIn";
 import { api } from "@/lib/api";
 
@@ -39,10 +38,7 @@ export default async function RankingPage() {
               <div key={user.id} className="feature-row flex items-center gap-6">
                 <span className="text-caption w-8">{user.rank}</span>
                 <span className="flex-1 text-[1.0625rem] text-[var(--text)]">
-                  <UserNameWithBadge
-                    name={user.displayName ?? user.username}
-                    role={user.role}
-                  />
+                  {user.displayName ?? user.username}
                 </span>
                 <span className="text-caption">{user.score.toLocaleString()} XP</span>
                 <span className="text-caption">Lv.{user.level}</span>

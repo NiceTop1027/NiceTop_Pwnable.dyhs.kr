@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
-import { UserNameWithBadge } from "@/components/ui/UserNameWithBadge";
 import { isStaffRole } from "@/lib/roles";
 import { useAuth } from "@/providers/AuthProvider";
 
@@ -27,9 +26,9 @@ export function HeaderAuth({ mobile = false }: { mobile?: boolean }) {
           )}
           <Link
             href="/profile"
-            className="flex justify-center text-[1.0625rem] text-[var(--text)]"
+            className="text-center text-[1.0625rem] text-[var(--text)]"
           >
-            <UserNameWithBadge name={name} role={user.role} />
+            {name}
           </Link>
         </div>
       );
@@ -47,9 +46,9 @@ export function HeaderAuth({ mobile = false }: { mobile?: boolean }) {
         )}
         <Link
           href="/profile"
-          className="inline-flex items-center text-xs text-[var(--text-secondary)] transition-opacity hover:opacity-60"
+          className="text-xs text-[var(--text-secondary)] transition-opacity hover:opacity-60"
         >
-          <UserNameWithBadge name={name} role={user.role} />
+          {name}
         </Link>
       </>
     );

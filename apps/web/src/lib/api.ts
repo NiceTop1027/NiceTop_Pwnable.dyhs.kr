@@ -596,4 +596,4 @@ export function isStaff(role?: string) {
   return role === "OWNER" || role === "ADMIN";
 }
 
-export { hasRoleBadge, isStaffRole } from "./roles";
+export { isStaffRole } from "./roles";
