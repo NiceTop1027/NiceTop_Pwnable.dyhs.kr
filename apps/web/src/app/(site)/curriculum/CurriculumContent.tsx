@@ -7,6 +7,7 @@ import PageHeader from "@/components/ui/PageHeader";
 import { Button } from "@/components/ui/Button";
 import { FadeIn } from "@/components/pages/FadeIn";
 import { CurriculumRichContent } from "@/components/notion/CurriculumRichContent";
+import { useAuth } from "@/providers/AuthProvider";
 import type { CurriculumTrack } from "@/lib/curriculum";
 
 function TrackSection({ track }: { track: CurriculumTrack }) {
@@ -77,6 +78,8 @@ function TrackSection({ track }: { track: CurriculumTrack }) {
 }
 
 export default function CurriculumContent({ tracks }: { tracks: CurriculumTrack[] }) {
+  const { user, isLoading } = useAuth();
+
   return (
     <div className="pb-24">
       <FadeIn>
@@ -94,19 +97,40 @@ export default function CurriculumContent({ tracks }: { tracks: CurriculumTrack[
         </FadeIn>
       )}
 
-      <FadeIn>
-        <div className="border-t border-[var(--divider)] py-24 text-center">
-          <h2 className="text-headline-sm">준비되셨나요?</h2>
-          <p className="text-body-lg mx-auto mt-4 max-w-md">
-            회원가입 후 학습을 시작하세요
-          </p>
-          <div className="mt-10">
-            <Button href="/auth?tab=register" variant="fill">
-              시작하기
-            </Button>
+      {!isLoading && (
+        <FadeIn>
+          <div className="border-t border-[var(--divider)] py-24 text-center">
+            {user ? (
+              <>
+                <h2 className="text-headline-sm">학습을 이어가세요</h2>
+                <p className="text-body-lg mx-auto mt-4 max-w-md">
+                  {user.displayName ?? user.username}님, 커리큘럼에 맞춰 강의와 워게임을 진행해 보세요
+                </p>
+                <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
+                  <Button href="/lectures" variant="fill">
+                    강의 시작
+                  </Button>
+                  <Button href="/wargame" variant="outline">
+                    워게임 도전
+                  </Button>
+                </div>
+              </>
+            ) : (
+              <>
+                <h2 className="text-headline-sm">준비되셨나요?</h2>
+                <p className="text-body-lg mx-auto mt-4 max-w-md">
+                  회원가입 후 학습을 시작하세요
+                </p>
+                <div className="mt-10">
+                  <Button href="/auth?tab=register" variant="fill">
+                    시작하기
+                  </Button>
+                </div>
+              </>
+            )}
           </div>
-        </div>
-      </FadeIn>
+        </FadeIn>
+      )}
     </div>
   );
 }

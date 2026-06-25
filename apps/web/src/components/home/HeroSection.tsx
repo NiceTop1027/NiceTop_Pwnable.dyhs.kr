@@ -2,8 +2,10 @@
 
 import { motion, useScroll, useTransform } from "framer-motion";
 import { Button } from "@/components/ui/Button";
+import { useAuth } from "@/providers/AuthProvider";
 
 export function HeroSection() {
+  const { user, isLoading } = useAuth();
   const { scrollY } = useScroll();
   const opacity = useTransform(scrollY, [0, 500], [1, 0]);
   const y = useTransform(scrollY, [0, 500], [0, 150]);
@@ -45,19 +47,34 @@ export function HeroSection() {
           한국 학생을 위해 만들었습니다
         </motion.p>
 
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.7, ease: [0.25, 0.1, 0.25, 1] }}
-          className="mt-12 flex flex-wrap items-center justify-center gap-5"
-        >
-          <Button href="/auth/register" variant="fill">
-            시작하기
-          </Button>
-          <Button href="/curriculum" variant="text">
-            커리큘럼 보기
-          </Button>
-        </motion.div>
+        {!isLoading && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.7, ease: [0.25, 0.1, 0.25, 1] }}
+            className="mt-12 flex flex-wrap items-center justify-center gap-5"
+          >
+            {user ? (
+              <>
+                <Button href="/lectures" variant="fill">
+                  학습 시작
+                </Button>
+                <Button href="/profile" variant="text">
+                  내 프로필
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button href="/auth?tab=register" variant="fill">
+                  시작하기
+                </Button>
+                <Button href="/curriculum" variant="text">
+                  커리큘럼 보기
+                </Button>
+              </>
+            )}
+          </motion.div>
+        )}
       </motion.div>
     </section>
   );

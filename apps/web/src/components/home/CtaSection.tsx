@@ -3,8 +3,10 @@
 import { useRef } from "react";
 import { motion, useScroll, useTransform } from "framer-motion";
 import { Button } from "@/components/ui/Button";
+import { useAuth } from "@/providers/AuthProvider";
 
 export function CtaSection() {
+  const { user, isLoading } = useAuth();
   const ref = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({
     target: ref,
@@ -21,20 +23,37 @@ export function CtaSection() {
         style={{ opacity, y, scale }}
         className="mx-auto max-w-3xl text-center"
       >
-        <h2 className="text-headline-sm">
-          지금 시작하세요
-        </h2>
-        <p className="text-body-lg mx-auto mt-6 max-w-lg">
-          무료 회원가입 후 강의, 워게임, CTF에 바로 참여할 수 있습니다
-        </p>
-        <div className="mt-12 flex flex-wrap items-center justify-center gap-5">
-          <Button href="/auth/register" variant="fill">
-            회원가입
-          </Button>
-          <Button href="/wargame" variant="outline">
-            워게임 도전
-          </Button>
-        </div>
+        {!isLoading && user ? (
+          <>
+            <h2 className="text-headline-sm">계속해서 성장하세요</h2>
+            <p className="text-body-lg mx-auto mt-6 max-w-lg">
+              {user.displayName ?? user.username}님, 오늘도 한 걸음 더 나아가 보세요
+            </p>
+            <div className="mt-12 flex flex-wrap items-center justify-center gap-5">
+              <Button href="/lectures" variant="fill">
+                강의 이어하기
+              </Button>
+              <Button href="/wargame" variant="outline">
+                워게임 도전
+              </Button>
+            </div>
+          </>
+        ) : !isLoading ? (
+          <>
+            <h2 className="text-headline-sm">지금 시작하세요</h2>
+            <p className="text-body-lg mx-auto mt-6 max-w-lg">
+              무료 회원가입 후 강의, 워게임, CTF에 바로 참여할 수 있습니다
+            </p>
+            <div className="mt-12 flex flex-wrap items-center justify-center gap-5">
+              <Button href="/auth?tab=register" variant="fill">
+                회원가입
+              </Button>
+              <Button href="/wargame" variant="outline">
+                워게임 도전
+              </Button>
+            </div>
+          </>
+        ) : null}
       </motion.div>
     </section>
   );
