@@ -78,13 +78,15 @@ function TrackSection({ track, index }: { track: CurriculumTrack; index: number 
 
 export default function CurriculumContent({ tracks }: { tracks: CurriculumTrack[] }) {
   const { user, isLoading } = useAuth();
+  const firstLectureHref =
+    tracks.flatMap((t) => t.steps).find((s) => s.href)?.href ?? "/wargame";
 
   return (
     <div className="curriculum-page pb-24">
       <FadeIn>
         <PageHeader
           title="커리큘럼"
-          description="Beginner → Intermediate → Advanced, 체계적인 학습 경로"
+          description="Markdown 강의와 3-Track 로드맵 — Beginner에서 Advanced까지"
         />
       </FadeIn>
 
@@ -110,8 +112,8 @@ export default function CurriculumContent({ tracks }: { tracks: CurriculumTrack[
                   {user.displayName ?? user.username}님, 커리큘럼에 맞춰 강의와 워게임을 진행해 보세요
                 </p>
                 <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
-                  <Button href="/lectures" variant="fill">
-                    강의 시작
+                  <Button href={firstLectureHref} variant="fill">
+                    첫 강의 시작
                   </Button>
                   <Button href="/wargame" variant="outline">
                     워게임 도전

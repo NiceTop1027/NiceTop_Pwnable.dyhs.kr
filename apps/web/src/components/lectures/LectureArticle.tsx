@@ -21,8 +21,8 @@ export function LectureArticle({
     <article className="doc-page">
       <FadeIn>
         <header className="doc-header">
-          <Link href="/lectures" className="doc-back">
-            ‹ 강의
+          <Link href="/curriculum" className="doc-back">
+            ‹ 커리큘럼
           </Link>
           <p className="text-eyebrow mt-8">{category}</p>
           <h1 className="doc-title">{title}</h1>

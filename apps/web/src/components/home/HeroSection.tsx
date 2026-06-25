@@ -56,7 +56,7 @@ export function HeroSection() {
           >
             {user ? (
               <>
-                <Button href="/lectures" variant="fill">
+                <Button href="/curriculum" variant="fill">
                   학습 시작
                 </Button>
                 <Button href="/profile" variant="text">

@@ -5,8 +5,7 @@ import { useRef } from "react";
 import { motion, useScroll, useTransform } from "framer-motion";
 
 const features = [
-  { title: "강의", desc: "14개 카테고리 · Markdown 에디터 · 버전 관리", href: "/lectures" },
-  { title: "커리큘럼", desc: "Beginner → Intermediate → Advanced", href: "/curriculum" },
+  { title: "커리큘럼", desc: "Markdown 강의 · 3-Track · Beginner → Advanced", href: "/curriculum" },
   { title: "워게임", desc: "Docker 실습 · FLAG 제출 · First Blood", href: "/wargame" },
   { title: "CTF", desc: "개인전/팀전 · 실시간 스코어보드", href: "/ctf" },
   { title: "랭킹", desc: "경험치 · 시즌 · Lv.50 Legendary Hacker", href: "/ranking" },

@@ -6,8 +6,7 @@ export interface NavItem {
 
 export const mainNav: NavItem[] = [
   { label: "홈", href: "/", description: "메인 페이지" },
-  { label: "강의", href: "/lectures", description: "동영상 강의" },
-  { label: "커리큘럼", href: "/curriculum", description: "학습 로드맵" },
+  { label: "커리큘럼", href: "/curriculum", description: "강의 & 학습 로드맵" },
   { label: "워게임", href: "/wargame", description: "실습 문제" },
   { label: "CTF", href: "/ctf", description: "대회 & 챌린지" },
   { label: "랭킹", href: "/ranking", description: "리더보드" },
