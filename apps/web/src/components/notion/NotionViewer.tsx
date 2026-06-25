@@ -2,8 +2,9 @@
 
 import "@blocknote/react/style.css";
 import type { PartialBlock } from "@blocknote/core";
-import { ko } from "@blocknote/core/locales";
 import { BlockNoteViewRaw, useCreateBlockNote } from "@blocknote/react";
+import { blockNoteDictionary } from "@/lib/blocknote-dictionary";
+import { documentBlockNoteSchema } from "@/lib/blocknote-schema";
 
 type NotionViewerProps = {
   content: unknown;
@@ -19,7 +20,8 @@ export function NotionViewer({ content }: NotionViewerProps) {
   if (!blocks) return null;
 
   const editor = useCreateBlockNote({
-    dictionary: ko,
+    dictionary: blockNoteDictionary,
+    schema: documentBlockNoteSchema,
     initialContent: blocks,
   });
 

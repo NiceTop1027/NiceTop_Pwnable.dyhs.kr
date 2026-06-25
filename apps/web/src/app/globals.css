@@ -2404,6 +2404,53 @@ a {
   letter-spacing: -0.025em;
 }
 
+.notion-editor [data-content-type="table"] .tableWrapper,
+.notion-viewer [data-content-type="table"] .tableWrapper,
+.notion-viewer-public [data-content-type="table"] .tableWrapper {
+  overflow: visible;
+}
+
+.notion-editor [data-content-type="table"] table,
+.notion-viewer [data-content-type="table"] table,
+.notion-viewer-public [data-content-type="table"] table {
+  border-collapse: collapse;
+  font-size: 0.9375rem;
+}
+
+.notion-editor [data-content-type="table"] th,
+.notion-editor [data-content-type="table"] td,
+.notion-viewer [data-content-type="table"] th,
+.notion-viewer [data-content-type="table"] td,
+.notion-viewer-public [data-content-type="table"] th,
+.notion-viewer-public [data-content-type="table"] td {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  padding: 0.5rem 0.75rem;
+  vertical-align: top;
+}
+
+.notion-editor [data-content-type="table"] th,
+.notion-viewer [data-content-type="table"] th,
+.notion-viewer-public [data-content-type="table"] th {
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+.notion-editor .bn-table-handle,
+.notion-editor .bn-extend-button,
+.notion-editor .bn-table-cell-handle {
+  z-index: 25;
+}
+
+.notion-editor .bn-table-handle-menu,
+.notion-editor .bn-drag-handle-menu {
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 0.75rem !important;
+  background: rgba(10, 10, 12, 0.96) !important;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45) !important;
+  backdrop-filter: blur(20px);
+}
+
 .notion-viewer .bn-side-menu,
 .notion-viewer-public .bn-side-menu {
   display: none !important;

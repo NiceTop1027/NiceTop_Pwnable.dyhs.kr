@@ -2,15 +2,20 @@
 
 import "@blocknote/mantine/style.css";
 import type { PartialBlock } from "@blocknote/core";
-import { ko } from "@blocknote/core/locales";
 import { BlockNoteView } from "@blocknote/mantine";
-import { FormattingToolbarController, useCreateBlockNote } from "@blocknote/react";
+import {
+  FormattingToolbarController,
+  SideMenuController,
+  useCreateBlockNote,
+} from "@blocknote/react";
 import { useCallback } from "react";
 import { adminApi } from "@/lib/api";
+import { blockNoteDictionary } from "@/lib/blocknote-dictionary";
 import { documentBlockNoteSchema } from "@/lib/blocknote-schema";
 import { resolveMediaUrl } from "@/lib/media";
 import { getAccessToken } from "@/providers/AuthProvider";
 import { DocumentFormattingToolbar } from "./DocumentFormattingToolbar";
+import { DocumentSideMenu } from "./DocumentSideMenu";
 
 type NotionEditorProps = {
   initialContent?: PartialBlock[] | null;
@@ -52,7 +57,7 @@ export function NotionEditor({
   );
 
   const editor = useCreateBlockNote({
-    dictionary: ko,
+    dictionary: blockNoteDictionary,
     schema: documentBlockNoteSchema,
     initialContent: blocks,
     uploadFile,
@@ -70,18 +75,22 @@ export function NotionEditor({
         theme="dark"
         editable={editable}
         onChange={handleChange}
-        sideMenu={editable}
+        sideMenu={false}
         slashMenu={editable}
         linkToolbar={editable}
         filePanel={editable}
+        tableHandles={editable}
+        emojiPicker={editable}
         formattingToolbar={false}
-        emojiPicker={false}
         comments={false}
       >
         {editable && (
-          <FormattingToolbarController
-            formattingToolbar={DocumentFormattingToolbar}
-          />
+          <>
+            <FormattingToolbarController
+              formattingToolbar={DocumentFormattingToolbar}
+            />
+            <SideMenuController sideMenu={DocumentSideMenu} />
+          </>
         )}
       </BlockNoteView>
     </div>

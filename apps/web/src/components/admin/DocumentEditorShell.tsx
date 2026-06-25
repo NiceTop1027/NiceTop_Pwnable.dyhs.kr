@@ -191,9 +191,12 @@ export function DocumentEditorShell({
 
         <div className="notion-shortcuts" aria-label="단축키 안내">
           <span className="notion-shortcut">
-            <kbd>/</kbd> 블록 · 이미지 추가
+            <kbd>/</kbd> 표 · 목록 · 이미지 등 블록
           </span>
-          <span className="notion-shortcut">이미지 파일 드래그·붙여넣기</span>
+          <span className="notion-shortcut">표 셀 선택 시 행·열 추가/삭제</span>
+          <span className="notion-shortcut">
+            <kbd>:</kbd> 이모지 · 파일 드래그·붙여넣기
+          </span>
           <span className="notion-shortcut">
             <kbd>⌘</kbd>+<kbd>S</kbd> 저장
           </span>
