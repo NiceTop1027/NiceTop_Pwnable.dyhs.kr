@@ -31,6 +31,11 @@ const partners: Partner[] = [
     logoSize: "wide",
     href: "https://h4c.team",
   },
+  {
+    name: "플럭스웨어",
+    logo: "/partners/fluxware-logo.png",
+    href: "https://fluxware.co.kr",
+  },
 ];
 
 function PartnerItem({ partner }: { partner: Partner }) {
