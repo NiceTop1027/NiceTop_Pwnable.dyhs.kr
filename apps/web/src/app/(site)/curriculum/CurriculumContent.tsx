@@ -4,7 +4,6 @@ import Link from "next/link";
 import PageHeader from "@/components/ui/PageHeader";
 import { Button } from "@/components/ui/Button";
 import { FadeIn } from "@/components/pages/FadeIn";
-import { DocumentContent } from "@/components/content/DocumentContent";
 import { useAuth } from "@/providers/AuthProvider";
 import type { CurriculumTrack } from "@/lib/curriculum";
 
@@ -18,12 +17,6 @@ function TrackCard({ track, index }: { track: CurriculumTrack; index: number }) 
           <h2 className="curriculum-track-title">{track.label} 트랙</h2>
         </div>
       </header>
-
-      {track.desc && (
-        <div className="curriculum-track-body">
-          <DocumentContent content={track.desc} />
-        </div>
-      )}
 
       {track.steps.length > 0 ? (
         <ol className="curriculum-step-list">
@@ -69,10 +62,7 @@ export default function CurriculumContent({ tracks }: { tracks: CurriculumTrack[
   return (
     <div className="curriculum-page">
       <FadeIn>
-        <PageHeader
-          title="커리큘럼"
-          description="입문부터 고급까지, 단계별로 익스플로잇을 배우는 학습 로드맵입니다"
-        />
+        <PageHeader title="커리큘럼" />
       </FadeIn>
 
       {tracks.length > 0 ? (

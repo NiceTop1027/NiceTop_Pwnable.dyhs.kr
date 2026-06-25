@@ -351,33 +351,32 @@
 /* ─── Curriculum page ─── */
 .curriculum-page {
   width: 100%;
-  padding-top: 2.5rem;
+  padding-top: 1rem;
   padding-bottom: 3rem;
 }
 
 .curriculum-page .mb-12 {
-  margin-bottom: 3.5rem;
+  margin-bottom: 2rem;
 }
 
 .curriculum-board {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 1rem;
+  gap: 0;
   align-items: stretch;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.curriculum-track-card + .curriculum-track-card {
+  border-left: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .curriculum-track-card {
   display: flex;
   flex-direction: column;
   min-height: 100%;
-  padding: 1.25rem 1.125rem 1rem;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 1rem;
-  background: linear-gradient(
-    165deg,
-    rgba(255, 255, 255, 0.04),
-    rgba(255, 255, 255, 0.01)
-  );
+  padding: 1rem 1rem 0.75rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
 }
 
 .curriculum-track-card-header {
@@ -443,7 +442,7 @@
 
 .curriculum-step-list {
   list-style: none;
-  margin: 1.25rem 0 0;
+  margin: 0.875rem 0 0;
   padding: 0;
   flex: 1;
 }
@@ -520,19 +519,23 @@
 @media (max-width: 900px) {
   .curriculum-board {
     display: flex;
-    gap: 0.875rem;
+    gap: 0;
     overflow-x: auto;
     scroll-snap-type: x mandatory;
-    padding-bottom: 0.5rem;
-    margin-inline: -0.25rem;
-    padding-inline: 0.25rem;
+    padding-bottom: 0.25rem;
     scrollbar-width: thin;
     scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
   }
 
   .curriculum-track-card {
-    flex: 0 0 min(78vw, 20rem);
+    flex: 0 0 min(72vw, 18rem);
     scroll-snap-align: start;
+    border-top: none;
+    border-left: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .curriculum-track-card:first-child {
+    border-left: none;
   }
 }
 
