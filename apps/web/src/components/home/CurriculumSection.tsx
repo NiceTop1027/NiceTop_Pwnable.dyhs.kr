@@ -8,7 +8,7 @@ import {
   type MotionValue,
 } from "framer-motion";
 import { Button } from "@/components/ui/Button";
-import type { CurriculumTrack } from "@/lib/curriculum";
+import { resolveHomeCurriculumTracks, type CurriculumTrack } from "@/lib/curriculum";
 
 function TrackSlide({
   track,
@@ -124,18 +124,7 @@ export function CurriculumSection({ tracks }: { tracks: CurriculumTrack[] }) {
     offset: ["start start", "end end"],
   });
 
-  const displayTracks =
-    tracks.length > 0
-      ? tracks
-      : [
-          {
-            slug: "empty",
-            name: "Curriculum",
-            label: "준비 중",
-            desc: "관리자가 커리큘럼을 구성하고 있습니다",
-            steps: [],
-          },
-        ];
+  const displayTracks = resolveHomeCurriculumTracks(tracks);
 
   const sectionHeight = `${Math.max(300, displayTracks.length * 150)}vh`;
 

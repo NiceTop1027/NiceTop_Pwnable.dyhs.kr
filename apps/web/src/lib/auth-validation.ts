@@ -15,6 +15,12 @@ export function validatePassword(value: string): string | null {
   return null;
 }
 
+export function validateDisplayName(value: string): string | null {
+  if (!value.trim()) return "닉네임을 입력해 주세요";
+  if (value.length > 50) return "닉네임은 50자 이하여야 합니다";
+  return null;
+}
+
 export function validateEmail(value: string): string | null {
   if (!value.trim()) return null;
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
@@ -47,6 +53,8 @@ export function translateApiError(message: string): string {
     "Username or email already exists": "이미 사용 중인 아이디 또는 이메일입니다",
     "Username can only contain letters, numbers, and underscores":
       "아이디는 영문, 숫자, 밑줄(_)만 사용할 수 있습니다",
+    "Email already in use": "이미 사용 중인 이메일입니다",
+    "Current password is incorrect": "현재 비밀번호가 올바르지 않습니다",
   };
 
   return map[message] ?? message;

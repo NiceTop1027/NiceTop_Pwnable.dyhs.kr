@@ -56,10 +56,10 @@ export function HeaderAuth({ mobile = false }: { mobile?: boolean }) {
   if (mobile) {
     return (
       <div className="mt-8 flex flex-col gap-4">
-        <Button href="/auth/login" variant="outline" className="justify-center">
+        <Button href="/auth" variant="outline" className="justify-center">
           로그인
         </Button>
-        <Button href="/auth/register" variant="fill" className="justify-center">
+        <Button href="/auth?tab=register" variant="fill" className="justify-center">
           시작하기
         </Button>
       </div>
@@ -69,12 +69,12 @@ export function HeaderAuth({ mobile = false }: { mobile?: boolean }) {
   return (
     <>
       <Link
-        href="/auth/login"
+        href="/auth"
         className="text-xs text-[var(--text-secondary)] transition-opacity hover:opacity-60"
       >
         로그인
       </Link>
-      <Button href="/auth/register" variant="fill" className="!px-4 !py-1.5 !text-xs">
+      <Button href="/auth?tab=register" variant="fill" className="!px-4 !py-1.5 !text-xs">
         시작하기
       </Button>
     </>

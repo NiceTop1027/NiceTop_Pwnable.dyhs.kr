@@ -32,3 +32,5 @@ packages/database/prisma/migrations/
 
 .idea/
 .vscode/
+
+apps/api/uploads/

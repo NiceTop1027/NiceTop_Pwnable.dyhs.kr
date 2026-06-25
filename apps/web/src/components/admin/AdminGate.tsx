@@ -37,7 +37,7 @@ export function AdminGate({ children }: { children: ReactNode }) {
             관리자 페이지는 OWNER · ADMIN 권한이 필요합니다
           </p>
           <div className="admin-gate-actions">
-            <AdminButton variant="primary" onClick={() => router.push("/auth/login")}>
+            <AdminButton variant="primary" onClick={() => router.push("/auth")}>
               로그인
             </AdminButton>
           </div>

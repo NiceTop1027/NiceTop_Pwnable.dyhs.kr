@@ -2,16 +2,30 @@ import {
   Injectable,
   ConflictException,
   UnauthorizedException,
+  BadRequestException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import * as argon2 from 'argon2';
 import { randomBytes } from 'crypto';
+import { existsSync, mkdirSync, unlinkSync, writeFileSync } from 'fs';
+import { join } from 'path';
 import { PrismaService } from '../prisma/prisma.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
+import { UpdateProfileDto } from './dto/update-profile.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
 
 const loginBuckets = new Map<string, { count: number; resetAt: number }>();
+
+const AVATAR_DIR = join(process.cwd(), 'uploads', 'avatars');
+const AVATAR_MAX_BYTES = 2 * 1024 * 1024;
+const AVATAR_MIME_TO_EXT: Record<string, string> = {
+  'image/jpeg': '.jpg',
+  'image/png': '.png',
+  'image/webp': '.webp',
+  'image/gif': '.gif',
+};
 
 const USER_SELECT = {
   id: true,
@@ -109,6 +123,123 @@ export class AuthService {
       avatarUrl: user.avatarUrl,
       createdAt: user.createdAt,
     });
+  }
+
+  async updateProfile(userId: string, dto: UpdateProfileDto) {
+    if (dto.email) {
+      const existing = await this.prisma.user.findFirst({
+        where: {
+          email: dto.email,
+          NOT: { id: userId },
+        },
+      });
+      if (existing) {
+        throw new ConflictException('Email already in use');
+      }
+    }
+
+    const user = await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        displayName: dto.displayName,
+        email: dto.email === '' ? null : dto.email,
+        bio: dto.bio === '' ? null : dto.bio,
+      },
+      select: USER_SELECT,
+    });
+
+    return user;
+  }
+
+  async uploadAvatar(userId: string, file: Express.Multer.File) {
+    if (!file?.buffer?.length) {
+      throw new BadRequestException('No file uploaded');
+    }
+
+    if (file.size > AVATAR_MAX_BYTES) {
+      throw new BadRequestException('File must be 2MB or smaller');
+    }
+
+    const ext = AVATAR_MIME_TO_EXT[file.mimetype];
+    if (!ext) {
+      throw new BadRequestException('Only JPEG, PNG, WebP, and GIF are allowed');
+    }
+
+    const current = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { avatarUrl: true, isActive: true },
+    });
+
+    if (!current?.isActive) {
+      throw new UnauthorizedException();
+    }
+
+    this.ensureAvatarDir();
+
+    const filename = `${userId}-${Date.now()}${ext}`;
+    const filepath = join(AVATAR_DIR, filename);
+    writeFileSync(filepath, file.buffer);
+
+    const avatarUrl = `/uploads/avatars/${filename}`;
+
+    const user = await this.prisma.user.update({
+      where: { id: userId },
+      data: { avatarUrl },
+      select: USER_SELECT,
+    });
+
+    if (current.avatarUrl) {
+      this.deleteAvatarFile(current.avatarUrl);
+    }
+
+    return user;
+  }
+
+  async deleteAvatar(userId: string) {
+    const current = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { avatarUrl: true, isActive: true },
+    });
+
+    if (!current?.isActive) {
+      throw new UnauthorizedException();
+    }
+
+    if (current.avatarUrl) {
+      this.deleteAvatarFile(current.avatarUrl);
+    }
+
+    const user = await this.prisma.user.update({
+      where: { id: userId },
+      data: { avatarUrl: null },
+      select: USER_SELECT,
+    });
+
+    return user;
+  }
+
+  async changePassword(userId: string, dto: ChangePasswordDto) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { passwordHash: true, isActive: true },
+    });
+
+    if (!user?.isActive) {
+      throw new UnauthorizedException();
+    }
+
+    const valid = await argon2.verify(user.passwordHash, dto.currentPassword);
+    if (!valid) {
+      throw new UnauthorizedException('Current password is incorrect');
+    }
+
+    const passwordHash = await argon2.hash(dto.newPassword);
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { passwordHash },
+    });
+
+    return { success: true };
   }
 
   async me(userId: string) {
@@ -234,6 +365,22 @@ export class AuthService {
     bucket.count += 1;
     if (userId && bucket.count >= 5) {
       // brute-force protection hook point
+    }
+  }
+
+  private ensureAvatarDir() {
+    if (!existsSync(AVATAR_DIR)) {
+      mkdirSync(AVATAR_DIR, { recursive: true });
+    }
+  }
+
+  private deleteAvatarFile(avatarUrl: string) {
+    const filename = avatarUrl.split('/').pop();
+    if (!filename || filename.includes('..')) return;
+
+    const filepath = join(AVATAR_DIR, filename);
+    if (existsSync(filepath)) {
+      unlinkSync(filepath);
     }
   }
 

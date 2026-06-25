@@ -5,15 +5,25 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import * as argon2 from 'argon2';
-import { ChallengeCategory } from '@prisma/client';
+import { ChallengeCategory, Difficulty } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { hashFlag } from '../common/utils/hash';
+import { calcChallengeXp } from '../common/utils/challenge-xp';
 
 const submitBuckets = new Map<string, { count: number; resetAt: number }>();
 
 @Injectable()
 export class ChallengesService {
   constructor(private readonly prisma: PrismaService) {}
+
+  private withXpReward<T extends { points: number; difficulty: Difficulty }>(
+    challenge: T,
+  ) {
+    return {
+      ...challenge,
+      xpReward: calcChallengeXp(challenge.points, challenge.difficulty),
+    };
+  }
 
   async getChallenges(category?: ChallengeCategory) {
     const challenges = await this.prisma.challenge.findMany({
@@ -36,7 +46,7 @@ export class ChallengesService {
       },
     });
 
-    return challenges;
+    return challenges.map((c) => this.withXpReward(c));
   }
 
   async getChallengeBySlug(slug: string, userId?: string) {
@@ -70,7 +80,7 @@ export class ChallengesService {
 
     const { solves, ...rest } = challenge;
     return {
-      ...rest,
+      ...this.withXpReward(rest),
       solved: solves?.length ? solves[0] : null,
     };
   }
@@ -131,6 +141,8 @@ export class ChallengesService {
       where: { challengeId: challenge.id },
     });
 
+    const xpAwarded = calcChallengeXp(challenge.points, challenge.difficulty);
+
     const solve = await this.prisma.$transaction(async (tx) => {
       const created = await tx.solve.create({
         data: {
@@ -142,7 +154,7 @@ export class ChallengesService {
 
       await tx.user.update({
         where: { id: userId },
-        data: { score: { increment: challenge.points } },
+        data: { score: { increment: xpAwarded } },
       });
 
       await tx.submissionLog.create({
@@ -160,7 +172,9 @@ export class ChallengesService {
     return {
       correct: true,
       isFirstBlood: solve.isFirstBlood,
-      points: challenge.points,
+      points: xpAwarded,
+      basePoints: challenge.points,
+      difficulty: challenge.difficulty,
     };
   }
 

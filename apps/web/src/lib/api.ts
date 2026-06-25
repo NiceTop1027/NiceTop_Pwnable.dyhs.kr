@@ -114,6 +114,7 @@ export type Challenge = {
   category: string;
   difficulty: string;
   points: number;
+  xpReward: number;
   dockerImage: string | null;
   _count: { solves: number };
 };
@@ -204,6 +205,52 @@ export const api = {
       "/auth/me",
       { token },
     ),
+
+  updateProfile: (
+    token: string,
+    data: { displayName?: string; email?: string; bio?: string },
+  ) =>
+    apiFetch<AuthUser>("/auth/me", {
+      method: "PATCH",
+      body: JSON.stringify(data),
+      token,
+    }),
+
+  changePassword: (
+    token: string,
+    data: { currentPassword: string; newPassword: string },
+  ) =>
+    apiFetch<{ success: boolean }>("/auth/password", {
+      method: "PATCH",
+      body: JSON.stringify(data),
+      token,
+    }),
+
+  uploadAvatar: async (token: string, file: File) => {
+    const form = new FormData();
+    form.append("avatar", file);
+
+    const res = await fetch(`${API_URL}/api/auth/avatar`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+      body: form,
+      cache: "no-store",
+    });
+
+    const data = await res.json().catch(() => null);
+    if (!res.ok) {
+      const raw = (data as { message?: string | string[] })?.message;
+      const message = Array.isArray(raw)
+        ? raw.join(", ")
+        : raw ?? "Request failed";
+      throw new ApiError(message, res.status, data);
+    }
+
+    return data as AuthUser;
+  },
+
+  deleteAvatar: (token: string) =>
+    apiFetch<AuthUser>("/auth/avatar", { method: "DELETE", token }),
 
   refresh: (refreshToken: string) =>
     apiFetch<AuthResponse>("/auth/refresh", {

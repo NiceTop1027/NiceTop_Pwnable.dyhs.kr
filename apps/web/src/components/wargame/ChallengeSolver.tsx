@@ -66,7 +66,7 @@ export function ChallengeSolver({
     return (
       <div className="rounded-2xl border border-[var(--divider)] bg-[var(--bg-muted)] p-8 text-center">
         <p className="text-body">FLAG 제출을 위해 로그인이 필요합니다</p>
-        <Button href="/auth/login" variant="fill" className="mt-6">
+        <Button href="/auth" variant="fill" className="mt-6">
           로그인
         </Button>
       </div>

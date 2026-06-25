@@ -15,6 +15,7 @@ import {
   AdminTextarea,
 } from "./ui/AdminField";
 import { AdminRow } from "./ui/AdminRow";
+import { calcChallengeXp } from "@/lib/challenge-xp";
 
 type ChallengeRow = {
   id: string;
@@ -127,10 +128,11 @@ export function ChallengeAdminPanel() {
             <AdminInput
               name="points"
               type="number"
-              label="점수"
+              label="기본 점수"
               defaultValue={100}
               min={0}
               required
+              hint="난이도 가중치 적용 후 XP 지급 (Easy ×1 · Medium ×1.5 · Hard ×2 · Insane ×3)"
             />
           </div>
           <AdminInput name="flag" label="FLAG" placeholder="DYHS{...}" required />
@@ -161,7 +163,7 @@ export function ChallengeAdminPanel() {
             <AdminRow
               key={item.id}
               title={item.title}
-              meta={`${item.category} · ${item.difficulty} · ${item.points}pt · ${item._count.solves} solved`}
+              meta={`${item.category} · ${item.difficulty} · ${calcChallengeXp(item.points, item.difficulty).toLocaleString()} XP (기본 ${item.points}) · ${item._count.solves} solved`}
               badge={
                 <AdminBadge variant={item.isPublished ? "success" : "warning"}>
                   {item.isPublished ? "공개" : "비공개"}

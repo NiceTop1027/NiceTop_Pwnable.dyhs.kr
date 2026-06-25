@@ -59,7 +59,7 @@ export default async function WargamePage() {
               items={items.map((c) => ({
                 title: c.title,
                 desc: c.description,
-                meta: `${difficultyLabels[c.difficulty] ?? c.difficulty} · ${c.points}pt · ${c._count.solves} solved`,
+                meta: `${difficultyLabels[c.difficulty] ?? c.difficulty} · ${(c.xpReward ?? c.points).toLocaleString()} XP · ${c._count.solves} solved`,
                 href: `/wargame/${c.slug}`,
               }))}
             />

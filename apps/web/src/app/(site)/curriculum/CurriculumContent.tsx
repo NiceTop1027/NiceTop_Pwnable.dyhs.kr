@@ -101,7 +101,7 @@ export default function CurriculumContent({ tracks }: { tracks: CurriculumTrack[
             회원가입 후 학습을 시작하세요
           </p>
           <div className="mt-10">
-            <Button href="/auth/register" variant="fill">
+            <Button href="/auth?tab=register" variant="fill">
               시작하기
             </Button>
           </div>

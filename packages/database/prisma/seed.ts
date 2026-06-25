@@ -113,6 +113,95 @@ async function main() {
 
   console.log(`Seeded ${curricula.length} curricula`);
 
+  const curriculumTracks = [
+    {
+      slug: 'beginner',
+      steps: [
+        { title: 'Linux 기초', slug: 'linux-basics', description: '셸, 권한, 프로세스 이해', categorySlug: 'intro' },
+        { title: 'C Language', slug: 'c-language', description: '포인터와 메모리 구조', categorySlug: 'intro' },
+        { title: 'Assembly', slug: 'assembly', description: '디스어셈블리와 레지스터', categorySlug: 'intro' },
+        { title: 'Memory', slug: 'memory-layout', description: '스택·힙 레이아웃', categorySlug: 'intro' },
+      ],
+    },
+    {
+      slug: 'intermediate',
+      steps: [
+        { title: 'Stack BOF', slug: 'stack-bof', description: '기본 버퍼 오버플로우', categorySlug: 'stack-overflow' },
+        { title: 'Shellcode', slug: 'shellcode-basics', description: '직접 쉘코드 작성', categorySlug: 'shellcode' },
+        { title: 'Return-to-libc', slug: 'ret2libc', description: 'libc 함수 활용', categorySlug: 'stack-overflow' },
+        { title: 'ROP Chain', slug: 'rop-chain', description: '가젯 체인 구성', categorySlug: 'rop' },
+      ],
+    },
+    {
+      slug: 'advanced',
+      steps: [
+        { title: 'Heap Exploitation', slug: 'heap-exploit', description: 'Use-after-free, tcache', categorySlug: 'heap' },
+        { title: 'Kernel Pwn', slug: 'kernel-pwn', description: '커널 모듈·드라이버', categorySlug: 'kernel' },
+        { title: 'Browser Security', slug: 'browser-pwn', description: 'JIT, sandbox 우회', categorySlug: 'advanced' },
+      ],
+    },
+  ];
+
+  let itemCount = 0;
+
+  for (const track of curriculumTracks) {
+    const curriculum = await prisma.curriculum.findUnique({ where: { slug: track.slug } });
+    if (!curriculum) continue;
+
+    await prisma.curriculumItem.deleteMany({ where: { curriculumId: curriculum.id } });
+
+    for (let i = 0; i < track.steps.length; i++) {
+      const step = track.steps[i];
+      const category = await prisma.lectureCategory.findUnique({
+        where: { slug: step.categorySlug },
+      });
+      if (!category) continue;
+
+      const lecture = await prisma.lecture.upsert({
+        where: { slug: step.slug },
+        update: {
+          title: step.title,
+          description: step.description,
+          categoryId: category.id,
+          order: i + 1,
+        },
+        create: {
+          title: step.title,
+          slug: step.slug,
+          description: step.description,
+          categoryId: category.id,
+          order: i + 1,
+        },
+      });
+
+      await prisma.lectureVersion.upsert({
+        where: { lectureId_version: { lectureId: lecture.id, version: 1 } },
+        update: {
+          content: `# ${step.title}\n\n${step.description}\n\n커리큘럼 학습 항목입니다.`,
+          isPublished: true,
+        },
+        create: {
+          lectureId: lecture.id,
+          version: 1,
+          content: `# ${step.title}\n\n${step.description}\n\n커리큘럼 학습 항목입니다.`,
+          isPublished: true,
+        },
+      });
+
+      await prisma.curriculumItem.create({
+        data: {
+          curriculumId: curriculum.id,
+          lectureId: lecture.id,
+          order: i + 1,
+        },
+      });
+
+      itemCount++;
+    }
+  }
+
+  console.log(`Seeded ${itemCount} curriculum items`);
+
   const boards = [
     { name: '자유게시판', slug: 'free', type: BoardType.FREE, description: '자유롭게 소통하는 게시판', order: 1 },
     { name: 'Q&A', slug: 'qna', type: BoardType.QNA, description: '질문과 답변 게시판', order: 2 },
