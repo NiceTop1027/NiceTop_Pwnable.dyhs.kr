@@ -212,6 +212,7 @@ a {
 
 .notification-bell {
   position: relative;
+  z-index: 70;
 }
 
 .notification-bell-trigger {
@@ -219,106 +220,185 @@ a {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 2rem;
-  height: 2rem;
-  border: none;
+  width: 2.125rem;
+  height: 2.125rem;
+  border: 1px solid transparent;
   border-radius: 999px;
   background: transparent;
   color: var(--text-secondary);
   cursor: pointer;
-  transition: color 0.2s ease, background-color 0.2s ease;
+  transition:
+    color 0.2s ease,
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
-.notification-bell-trigger:hover {
+.notification-bell-icon {
+  width: 1rem;
+  height: 1rem;
+}
+
+.notification-bell-trigger:hover,
+.notification-bell-trigger--open {
   color: var(--text);
   background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.notification-bell-trigger--active {
+  color: var(--text);
+}
+
+.notification-bell-trigger--active:not(.notification-bell-trigger--open) {
+  box-shadow: 0 0 0 1px rgba(255, 69, 58, 0.18);
 }
 
 .notification-bell-badge {
   position: absolute;
-  top: 0.2rem;
-  right: 0.15rem;
-  min-width: 1rem;
-  height: 1rem;
-  padding: 0 0.2rem;
+  top: 0.125rem;
+  right: 0.125rem;
+  min-width: 1.05rem;
+  height: 1.05rem;
+  padding: 0 0.22rem;
+  border: 1.5px solid #000;
   border-radius: 999px;
   background: #ff453a;
   color: #fff;
-  font-size: 0.625rem;
+  font-size: 0.5625rem;
   font-weight: 700;
-  line-height: 1rem;
+  line-height: 0.95rem;
   text-align: center;
+  box-shadow: 0 0 0 1px rgba(255, 69, 58, 0.35);
 }
 
 .notification-bell-panel {
   position: absolute;
-  top: calc(100% + 0.5rem);
+  top: calc(100% + 0.625rem);
   right: 0;
-  width: min(20rem, calc(100vw - 2rem));
+  width: min(22.5rem, calc(100vw - 1.5rem));
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 1rem;
-  background: rgba(12, 12, 14, 0.96);
-  backdrop-filter: blur(20px);
-  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.45);
+  border-radius: 1.125rem;
+  background: rgba(10, 10, 12, 0.97);
+  backdrop-filter: blur(24px) saturate(160%);
+  box-shadow:
+    0 24px 64px rgba(0, 0, 0, 0.55),
+    0 0 0 1px rgba(255, 255, 255, 0.03) inset;
   overflow: hidden;
-  z-index: 60;
+  transform-origin: top right;
 }
 
 .notification-bell-header {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
-  gap: 0.75rem;
-  padding: 0.875rem 1rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  gap: 0.875rem;
+  padding: 1rem 1rem 0.875rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.notification-bell-header-copy {
+  min-width: 0;
 }
 
 .notification-bell-title {
-  font-size: 0.8125rem;
+  font-size: 0.9375rem;
   font-weight: 600;
+  letter-spacing: -0.02em;
   color: var(--text);
 }
 
-.notification-bell-mark-all {
-  border: none;
-  background: transparent;
-  color: var(--text-secondary);
+.notification-bell-subtitle {
+  margin-top: 0.2rem;
   font-size: 0.75rem;
+  line-height: 1.4;
+  color: var(--text-tertiary);
+}
+
+.notification-bell-mark-all {
+  flex-shrink: 0;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-secondary);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  line-height: 1;
+  padding: 0.45rem 0.7rem;
   cursor: pointer;
-  transition: color 0.2s ease;
+  transition:
+    color 0.2s ease,
+    border-color 0.2s ease,
+    background-color 0.2s ease;
 }
 
 .notification-bell-mark-all:hover {
   color: var(--text);
+  border-color: rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.07);
 }
 
 .notification-bell-list {
   margin: 0;
-  padding: 0.35rem 0;
+  padding: 0.35rem;
   list-style: none;
-  max-height: 18rem;
+  max-height: 20rem;
   overflow-y: auto;
 }
 
 .notification-bell-item {
   display: flex;
-  flex-direction: column;
-  gap: 0.2rem;
-  padding: 0.75rem 1rem;
+  align-items: center;
+  gap: 0.7rem;
+  width: 100%;
+  padding: 0.8rem 0.7rem;
+  border-radius: 0.75rem;
   transition: background-color 0.2s ease;
 }
 
 .notification-bell-item:hover {
-  background: rgba(255, 255, 255, 0.04);
+  background: rgba(255, 255, 255, 0.05);
 }
 
 .notification-bell-item--unread {
   background: rgba(255, 255, 255, 0.03);
 }
 
+.notification-bell-item-dot {
+  flex-shrink: 0;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 999px;
+  background: #ff453a;
+  box-shadow: 0 0 0 3px rgba(255, 69, 58, 0.14);
+}
+
+.notification-bell-item-dot--read {
+  background: rgba(255, 255, 255, 0.18);
+  box-shadow: none;
+}
+
+.notification-bell-item-content {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.notification-bell-item-top {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-width: 0;
+}
+
 .notification-bell-item-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   font-size: 0.8125rem;
-  line-height: 1.45;
+  line-height: 1.4;
   color: var(--text);
 }
 
@@ -327,15 +407,14 @@ a {
 }
 
 .notification-bell-pin {
-  display: inline-block;
-  margin-right: 0.35rem;
-  padding: 0.1rem 0.35rem;
-  border-radius: 0.25rem;
-  background: rgba(255, 214, 102, 0.18);
+  flex-shrink: 0;
+  padding: 0.12rem 0.38rem;
+  border-radius: 0.3rem;
+  background: rgba(255, 214, 102, 0.16);
   color: #ffd666;
   font-size: 0.625rem;
   font-weight: 600;
-  vertical-align: middle;
+  line-height: 1.2;
 }
 
 .notification-bell-item-meta {
@@ -343,27 +422,133 @@ a {
   color: var(--text-tertiary);
 }
 
-.notification-bell-empty {
-  margin: 0;
-  padding: 1.25rem 1rem;
-  font-size: 0.8125rem;
+.notification-bell-item-chevron {
+  flex-shrink: 0;
+  width: 0.9rem;
+  height: 0.9rem;
   color: var(--text-tertiary);
+  opacity: 0.7;
+}
+
+.notification-bell-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  padding: 0.85rem 1rem 1rem;
+}
+
+.notification-bell-skeleton-row {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+}
+
+.notification-bell-skeleton-dot,
+.notification-bell-skeleton-line {
+  border-radius: 999px;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.05),
+    rgba(255, 255, 255, 0.1),
+    rgba(255, 255, 255, 0.05)
+  );
+  background-size: 200% 100%;
+  animation: notification-shimmer 1.4s ease-in-out infinite;
+}
+
+.notification-bell-skeleton-dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  flex-shrink: 0;
+}
+
+.notification-bell-skeleton-lines {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.notification-bell-skeleton-line {
+  height: 0.55rem;
+  width: 42%;
+}
+
+.notification-bell-skeleton-line--wide {
+  width: 78%;
+}
+
+@keyframes notification-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+.notification-bell-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1.75rem 1.25rem 1.5rem;
   text-align: center;
 }
 
-.notification-bell-footer {
-  display: block;
-  padding: 0.8rem 1rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
+.notification-bell-empty-icon {
+  width: 1.35rem;
+  height: 1.35rem;
+  color: var(--text-tertiary);
+}
+
+.notification-bell-empty-title {
+  margin: 0.75rem 0 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.notification-bell-empty-desc {
+  margin: 0.35rem 0 0;
   font-size: 0.75rem;
+  line-height: 1.5;
+  color: var(--text-tertiary);
+}
+
+.notification-bell-footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  padding: 0.85rem 1rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+  font-size: 0.75rem;
+  font-weight: 500;
   color: var(--text-secondary);
-  text-align: center;
-  transition: color 0.2s ease, background-color 0.2s ease;
+  transition:
+    color 0.2s ease,
+    background-color 0.2s ease;
 }
 
 .notification-bell-footer:hover {
   color: var(--text);
   background: rgba(255, 255, 255, 0.03);
+}
+
+.notification-bell-footer-icon {
+  width: 0.85rem;
+  height: 0.85rem;
+}
+
+@media (max-width: 767px) {
+  .notification-bell-panel {
+    position: fixed;
+    top: 3.25rem;
+    right: 0.75rem;
+    left: 0.75rem;
+    width: auto;
+    max-width: none;
+  }
 }
 
 /* ─── Cards (minimal) ─── */

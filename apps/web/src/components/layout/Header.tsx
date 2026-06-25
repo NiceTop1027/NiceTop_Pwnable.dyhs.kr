@@ -61,14 +61,17 @@ export default function Header() {
           <HeaderAuth />
         </div>
 
-        <button
-          type="button"
-          className="text-[var(--text-secondary)] md:hidden"
-          onClick={() => setMobileOpen(!mobileOpen)}
-          aria-label="메뉴"
-        >
-          {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-        </button>
+        <div className="flex items-center gap-3 md:hidden">
+          <NotificationBell />
+          <button
+            type="button"
+            className="text-[var(--text-secondary)]"
+            onClick={() => setMobileOpen(!mobileOpen)}
+            aria-label="메뉴"
+          >
+            {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          </button>
+        </div>
       </div>
 
       <AnimatePresence>
@@ -93,10 +96,6 @@ export default function Header() {
                   {item.label}
                 </Link>
               ))}
-              <div className="mt-6 flex items-center gap-4 border-b border-[var(--divider)] pb-4">
-                <NotificationBell />
-                <span className="text-sm text-[var(--text-secondary)]">알림</span>
-              </div>
               <HeaderAuth mobile />
             </nav>
           </motion.div>

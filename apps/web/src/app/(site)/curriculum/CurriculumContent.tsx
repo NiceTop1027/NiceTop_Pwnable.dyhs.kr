@@ -71,7 +71,7 @@ export default function CurriculumContent({ tracks }: { tracks: CurriculumTrack[
       <FadeIn>
         <PageHeader
           title="커리큘럼"
-          description="Markdown 강의와 3-Track 로드맵 — Beginner에서 Advanced까지"
+          description="입문부터 고급까지, 단계별로 익스플로잇을 배우는 학습 로드맵입니다"
         />
       </FadeIn>
 
