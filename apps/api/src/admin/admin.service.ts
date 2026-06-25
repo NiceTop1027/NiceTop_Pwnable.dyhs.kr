@@ -108,8 +108,20 @@ export class AdminService {
     });
   }
 
+  private async uniqueLectureSlug(base: string): Promise<string> {
+    let slug = base;
+    let suffix = 2;
+
+    while (await this.prisma.lecture.findUnique({ where: { slug } })) {
+      slug = `${base}-${suffix}`;
+      suffix += 1;
+    }
+
+    return slug;
+  }
+
   async createLecture(adminId: string, dto: CreateLectureDto) {
-    const slug = dto.slug ?? slugify(dto.title);
+    const slug = await this.uniqueLectureSlug(dto.slug ?? slugify(dto.title));
     const lecture = await this.prisma.lecture.create({
       data: {
         categoryId: dto.categoryId,
@@ -119,8 +131,8 @@ export class AdminService {
         versions: {
           create: {
             version: 1,
-            content: dto.content,
-            isPublished: dto.isPublished ?? true,
+            content: dto.content ?? '',
+            isPublished: dto.isPublished ?? false,
           },
         },
       },

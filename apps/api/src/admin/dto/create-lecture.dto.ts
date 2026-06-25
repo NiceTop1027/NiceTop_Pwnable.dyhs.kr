@@ -22,7 +22,6 @@ export class CreateLectureDto {
   description?: string;
 
   @IsString()
-  @MinLength(1)
   content!: string;
 
   @IsOptional()

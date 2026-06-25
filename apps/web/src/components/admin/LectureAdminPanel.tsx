@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { adminApi } from "@/lib/api";
-import { getAccessToken } from "@/providers/AuthProvider";
+import { getAccessToken, useAuth } from "@/providers/AuthProvider";
 import { AdminBadge } from "./ui/AdminBadge";
 import { AdminButton } from "./ui/AdminButton";
 import { AdminCard } from "./ui/AdminCard";
@@ -20,21 +20,30 @@ type LectureRow = {
 };
 
 export function LectureAdminPanel() {
+  const { user, isLoading: authLoading } = useAuth();
   const [lectures, setLectures] = useState<LectureRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   async function load() {
     const token = getAccessToken();
     if (!token) return;
     const list = await adminApi.lectures(token);
     setLectures(list as LectureRow[]);
+    setError(null);
   }
 
   useEffect(() => {
+    if (authLoading || !user) return;
+
+    setLoading(true);
     load()
-      .catch(() => setLectures([]))
+      .catch(() => {
+        setLectures([]);
+        setError("문서 목록을 불러오지 못했습니다. 다시 로그인해 주세요.");
+      })
       .finally(() => setLoading(false));
-  }, []);
+  }, [authLoading, user]);
 
   async function remove(id: string) {
     if (!confirm("이 문서를 삭제할까요?")) return;
@@ -55,7 +64,9 @@ export function LectureAdminPanel() {
         </Link>
       </div>
 
-      {loading ? (
+      {error ? (
+        <AdminEmpty message={error} />
+      ) : loading ? (
         <div className="admin-loading">
           <span className="admin-spinner" />
           불러오는 중

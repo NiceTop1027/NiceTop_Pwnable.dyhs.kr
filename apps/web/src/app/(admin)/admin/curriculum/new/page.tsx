@@ -3,37 +3,41 @@
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { adminApi } from "@/lib/api";
-import { getAccessToken } from "@/providers/AuthProvider";
+import { createOnce } from "@/lib/create-once";
+import { getAccessToken, useAuth } from "@/providers/AuthProvider";
 
 export default function AdminCurriculumNewPage() {
   const router = useRouter();
+  const { user, isLoading } = useAuth();
 
   useEffect(() => {
-    const token = getAccessToken();
-    if (!token) return;
+    if (isLoading || !user) return;
 
-    adminApi
-      .lectureCategories(token)
-      .then((categories) => {
-        const categoryId = categories[0]?.id;
-        if (!categoryId) {
-          router.replace("/admin/curriculum");
-          return;
-        }
-        return adminApi.createLecture(token, {
-          categoryId,
-          title: "제목 없음",
-          content: "",
-          isPublished: false,
-        });
-      })
+    const token = getAccessToken();
+    if (!token) {
+      router.replace("/admin/curriculum");
+      return;
+    }
+
+    createOnce("admin:curriculum:new", async () => {
+      const categories = await adminApi.lectureCategories(token);
+      const categoryId = categories[0]?.id;
+      if (!categoryId) {
+        throw new Error("No lecture categories");
+      }
+
+      return adminApi.createLecture(token, {
+        categoryId,
+        title: "제목 없음",
+        content: "",
+        isPublished: false,
+      });
+    })
       .then((lecture) => {
-        if (lecture && typeof lecture === "object" && "id" in lecture) {
-          router.replace(`/admin/curriculum/${(lecture as { id: string }).id}`);
-        }
+        router.replace(`/admin/curriculum/${lecture.id}`);
       })
       .catch(() => router.replace("/admin/curriculum"));
-  }, [router]);
+  }, [isLoading, user, router]);
 
   return (
     <div className="notion-page">

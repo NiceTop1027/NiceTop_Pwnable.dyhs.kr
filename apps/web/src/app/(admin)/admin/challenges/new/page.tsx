@@ -3,17 +3,24 @@
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { adminApi } from "@/lib/api";
-import { getAccessToken } from "@/providers/AuthProvider";
+import { createOnce } from "@/lib/create-once";
+import { getAccessToken, useAuth } from "@/providers/AuthProvider";
 
 export default function AdminChallengeNewPage() {
   const router = useRouter();
+  const { user, isLoading } = useAuth();
 
   useEffect(() => {
-    const token = getAccessToken();
-    if (!token) return;
+    if (isLoading || !user) return;
 
-    adminApi
-      .createChallenge(token, {
+    const token = getAccessToken();
+    if (!token) {
+      router.replace("/admin/challenges");
+      return;
+    }
+
+    createOnce("admin:challenge:new", () =>
+      adminApi.createChallenge(token, {
         title: "제목 없음",
         description: "",
         category: "PWN",
@@ -21,14 +28,13 @@ export default function AdminChallengeNewPage() {
         points: 100,
         flag: "DYHS{change_me}",
         isPublished: false,
-      })
+      }),
+    )
       .then((challenge) => {
-        if (challenge && typeof challenge === "object" && "id" in challenge) {
-          router.replace(`/admin/challenges/${(challenge as { id: string }).id}`);
-        }
+        router.replace(`/admin/challenges/${challenge.id}`);
       })
       .catch(() => router.replace("/admin/challenges"));
-  }, [router]);
+  }, [isLoading, user, router]);
 
   return (
     <div className="notion-page">

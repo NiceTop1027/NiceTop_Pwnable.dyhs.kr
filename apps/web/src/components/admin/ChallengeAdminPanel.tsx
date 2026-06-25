@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { adminApi } from "@/lib/api";
 import { calcChallengeXp } from "@/lib/challenge-xp";
-import { getAccessToken } from "@/providers/AuthProvider";
+import { getAccessToken, useAuth } from "@/providers/AuthProvider";
 import { AdminBadge } from "./ui/AdminBadge";
 import { AdminButton } from "./ui/AdminButton";
 import { AdminCard } from "./ui/AdminCard";
@@ -23,21 +23,30 @@ type ChallengeRow = {
 };
 
 export function ChallengeAdminPanel() {
+  const { user, isLoading: authLoading } = useAuth();
   const [items, setItems] = useState<ChallengeRow[]>([]);
   const [listLoading, setListLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   async function load() {
     const token = getAccessToken();
     if (!token) return;
     const data = (await adminApi.challenges(token)) as ChallengeRow[];
     setItems(data);
+    setError(null);
   }
 
   useEffect(() => {
+    if (authLoading || !user) return;
+
+    setListLoading(true);
     load()
-      .catch(() => setItems([]))
+      .catch(() => {
+        setItems([]);
+        setError("문제 목록을 불러오지 못했습니다. 다시 로그인해 주세요.");
+      })
       .finally(() => setListLoading(false));
-  }, []);
+  }, [authLoading, user]);
 
   async function togglePublish(item: ChallengeRow) {
     const token = getAccessToken();
@@ -64,7 +73,9 @@ export function ChallengeAdminPanel() {
         </Link>
       </div>
 
-      {listLoading ? (
+      {error ? (
+        <AdminEmpty message={error} />
+      ) : listLoading ? (
         <div className="admin-loading">
           <span className="admin-spinner" />
           불러오는 중

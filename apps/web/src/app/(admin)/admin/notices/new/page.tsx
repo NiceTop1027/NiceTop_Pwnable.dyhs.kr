@@ -3,28 +3,34 @@
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { adminApi } from "@/lib/api";
-import { getAccessToken } from "@/providers/AuthProvider";
+import { createOnce } from "@/lib/create-once";
+import { getAccessToken, useAuth } from "@/providers/AuthProvider";
 
 export default function AdminNoticeNewPage() {
   const router = useRouter();
+  const { user, isLoading } = useAuth();
 
   useEffect(() => {
-    const token = getAccessToken();
-    if (!token) return;
+    if (isLoading || !user) return;
 
-    adminApi
-      .createNotice(token, {
+    const token = getAccessToken();
+    if (!token) {
+      router.replace("/admin/notices");
+      return;
+    }
+
+    createOnce("admin:notice:new", () =>
+      adminApi.createNotice(token, {
         title: "제목 없음",
         content: "",
         isPinned: false,
-      })
+      }),
+    )
       .then((notice) => {
-        if (notice && typeof notice === "object" && "id" in notice) {
-          router.replace(`/admin/notices/${(notice as { id: string }).id}`);
-        }
+        router.replace(`/admin/notices/${notice.id}`);
       })
       .catch(() => router.replace("/admin/notices"));
-  }, [router]);
+  }, [isLoading, user, router]);
 
   return (
     <div className="notion-page">
