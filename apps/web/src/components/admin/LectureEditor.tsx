@@ -86,11 +86,11 @@ export function LectureEditor({ lectureId }: { lectureId: string }) {
   }, [save]);
 
   async function handleDelete() {
-    if (!confirm("이 강의를 삭제할까요?")) return;
+    if (!confirm("이 문서를 삭제할까요?")) return;
     const token = getAccessToken();
     if (!token) return;
     await adminApi.deleteLecture(token, lectureId);
-    router.push("/admin/lectures");
+    router.push("/admin/curriculum");
   }
 
   if (loading) {
@@ -108,12 +108,12 @@ export function LectureEditor({ lectureId }: { lectureId: string }) {
     return (
       <div className="notion-page">
         <div className="notion-toolbar">
-          <Link href="/admin/lectures" className="notion-toolbar-back">
+          <Link href="/admin/curriculum" className="notion-toolbar-back">
             <ArrowLeft className="h-4 w-4" strokeWidth={1.5} />
             목록
           </Link>
         </div>
-        <p className="notion-empty">강의를 찾을 수 없습니다</p>
+        <p className="notion-empty">문서를 찾을 수 없습니다</p>
       </div>
     );
   }
@@ -121,7 +121,7 @@ export function LectureEditor({ lectureId }: { lectureId: string }) {
   return (
     <div className="notion-page">
       <header className="notion-toolbar">
-        <Link href="/admin/lectures" className="notion-toolbar-back">
+        <Link href="/admin/curriculum" className="notion-toolbar-back">
           <ArrowLeft className="h-4 w-4" strokeWidth={1.5} />
           목록
         </Link>
@@ -174,7 +174,7 @@ export function LectureEditor({ lectureId }: { lectureId: string }) {
 
           {isPublished && (
             <Link
-              href={`/lectures/${lecture.slug}`}
+              href={`/curriculum/${lecture.slug}`}
               target="_blank"
               className="admin-btn admin-btn-ghost"
             >

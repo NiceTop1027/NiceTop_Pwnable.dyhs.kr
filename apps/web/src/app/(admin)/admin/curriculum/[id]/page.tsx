@@ -1,4 +1,4 @@
-import { CurriculumEditor } from "@/components/admin/CurriculumEditor";
+import { LectureEditor } from "@/components/admin/LectureEditor";
 
 export const metadata = { title: "커리큘럼 편집" };
 
@@ -8,5 +8,5 @@ export default async function AdminCurriculumEditPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  return <CurriculumEditor curriculumId={id} />;
+  return <LectureEditor lectureId={id} />;
 }

@@ -13,8 +13,25 @@ export default function AdminCurriculumNewPage() {
     if (!token) return;
 
     adminApi
-      .createCurriculum(token, { title: "제목 없음", tier: "BEGINNER" })
-      .then((c) => router.replace(`/admin/curriculum/${c.id}`))
+      .lectureCategories(token)
+      .then((categories) => {
+        const categoryId = categories[0]?.id;
+        if (!categoryId) {
+          router.replace("/admin/curriculum");
+          return;
+        }
+        return adminApi.createLecture(token, {
+          categoryId,
+          title: "제목 없음",
+          content: "",
+          isPublished: false,
+        });
+      })
+      .then((lecture) => {
+        if (lecture && typeof lecture === "object" && "id" in lecture) {
+          router.replace(`/admin/curriculum/${(lecture as { id: string }).id}`);
+        }
+      })
       .catch(() => router.replace("/admin/curriculum"));
   }, [router]);
 

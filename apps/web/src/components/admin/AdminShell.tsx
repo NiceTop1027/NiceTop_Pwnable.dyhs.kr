@@ -8,7 +8,7 @@ import { useAuth } from "@/providers/AuthProvider";
 import { AdminPageHeader } from "./ui/AdminPageHeader";
 
 function isDocumentEditorRoute(pathname: string) {
-  return /^\/admin\/(curriculum|lectures)\/(new|[^/]+)$/.test(pathname);
+  return /^\/admin\/curriculum\/(new|[^/]+)$/.test(pathname);
 }
 
 export function AdminShell({ children }: { children: ReactNode }) {

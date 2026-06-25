@@ -181,18 +181,6 @@ export type AdminLecture = {
   updatedAt: string;
 };
 
-export type AdminCurriculum = {
-  id: string;
-  title: string;
-  slug: string;
-  description: string | null;
-  content: unknown;
-  tier: string;
-  order: number;
-  createdAt: string;
-  updatedAt: string;
-};
-
 export const api = {
   health: () => apiFetch<{ status: string }>("/health"),
 
@@ -408,45 +396,6 @@ export const adminApi = {
 
   deleteChallenge: (token: string, id: string) =>
     apiFetch(`/admin/challenges/${id}`, { method: "DELETE", token }),
-
-  curricula: (token: string) => apiFetch<unknown[]>("/admin/curricula", { token }),
-
-  createCurriculum: (
-    token: string,
-    data: {
-      title: string;
-      description?: string;
-      content?: unknown;
-      tier?: string;
-    },
-  ) =>
-    apiFetch<AdminCurriculum>("/admin/curricula", {
-      method: "POST",
-      body: JSON.stringify(data),
-      token,
-    }),
-
-  getCurriculum: (token: string, id: string) =>
-    apiFetch<AdminCurriculum>(`/admin/curricula/${id}`, { token }),
-
-  updateCurriculum: (
-    token: string,
-    id: string,
-    data: {
-      title?: string;
-      description?: string;
-      content?: unknown;
-      tier?: string;
-    },
-  ) =>
-    apiFetch<AdminCurriculum>(`/admin/curricula/${id}`, {
-      method: "PATCH",
-      body: JSON.stringify(data),
-      token,
-    }),
-
-  deleteCurriculum: (token: string, id: string) =>
-    apiFetch(`/admin/curricula/${id}`, { method: "DELETE", token }),
 
   notices: (token: string) => apiFetch<Notice[]>("/admin/notices", { token }),
 

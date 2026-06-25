@@ -111,7 +111,7 @@ export function mapCurriculaToTracks(
         return {
           title: item.lecture.title,
           desc: item.lecture.description ?? undefined,
-          href: `/lectures/${item.lecture.slug}`,
+          href: `/curriculum/${item.lecture.slug}`,
         };
       }
       if (item.challenge) {

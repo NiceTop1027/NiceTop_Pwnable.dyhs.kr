@@ -1,7 +1,5 @@
-import { LectureAdminPanel } from "@/components/admin/LectureAdminPanel";
+import { redirect } from "next/navigation";
 
-export const metadata = { title: "강의 관리" };
-
-export default function AdminLecturesPage() {
-  return <LectureAdminPanel />;
+export default function AdminLecturesRedirectPage() {
+  redirect("/admin/curriculum");
 }

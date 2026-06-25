@@ -26,11 +26,10 @@ export default function AdminDashboardPage() {
   const items = stats
     ? [
         { label: "회원", value: stats.users },
-        { label: "강의", value: stats.lectures },
+        { label: "커리큘럼", value: stats.lectures },
         { label: "공개 문제", value: stats.challenges },
         { label: "풀이", value: stats.solves },
         { label: "공지", value: stats.notices },
-        { label: "커리큘럼", value: stats.curricula },
       ]
     : [];
 

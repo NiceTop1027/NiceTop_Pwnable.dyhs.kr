@@ -37,7 +37,7 @@ export function LectureAdminPanel() {
   }, []);
 
   async function remove(id: string) {
-    if (!confirm("이 강의를 삭제할까요?")) return;
+    if (!confirm("이 문서를 삭제할까요?")) return;
     const token = getAccessToken();
     if (!token) return;
     await adminApi.deleteLecture(token, id);
@@ -46,12 +46,12 @@ export function LectureAdminPanel() {
 
   return (
     <AdminCard
-      title="강의 문서"
-      description="Notion 스타일 에디터로 Markdown 강의를 작성합니다"
+      title="커리큘럼 문서"
+      description="Notion 스타일 에디터로 학습 문서를 작성합니다"
     >
       <div className="admin-form-actions" style={{ marginTop: 0, marginBottom: "1.25rem" }}>
-        <Link href="/admin/lectures/new" className="admin-btn admin-btn-primary">
-          새 강의
+        <Link href="/admin/curriculum/new" className="admin-btn admin-btn-primary">
+          새 문서
         </Link>
       </div>
 
@@ -80,7 +80,7 @@ export function LectureAdminPanel() {
               actions={
                 <>
                   <Link
-                    href={`/admin/lectures/${l.id}`}
+                    href={`/admin/curriculum/${l.id}`}
                     className="admin-btn admin-btn-ghost"
                   >
                     편집
@@ -94,7 +94,7 @@ export function LectureAdminPanel() {
           );
         })
       ) : (
-        <AdminEmpty message="등록된 강의가 없습니다" />
+        <AdminEmpty message="등록된 문서가 없습니다" />
       )}
     </AdminCard>
   );
