@@ -7,15 +7,15 @@ import { adminNav, getAdminPageMeta } from "@/lib/admin-nav";
 import { useAuth } from "@/providers/AuthProvider";
 import { AdminPageHeader } from "./ui/AdminPageHeader";
 
-function isCurriculumEditorRoute(pathname: string) {
-  return /^\/admin\/curriculum\/(new|[^/]+)$/.test(pathname);
+function isDocumentEditorRoute(pathname: string) {
+  return /^\/admin\/(curriculum|lectures)\/(new|[^/]+)$/.test(pathname);
 }
 
 export function AdminShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const meta = getAdminPageMeta(pathname);
   const { user, logout } = useAuth();
-  const editorMode = isCurriculumEditorRoute(pathname);
+  const editorMode = isDocumentEditorRoute(pathname);
 
   if (editorMode) {
     return <div className="admin-editor-root">{children}</div>;

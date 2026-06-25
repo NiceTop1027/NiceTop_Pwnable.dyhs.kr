@@ -11,6 +11,7 @@ import { slugify } from '../common/utils/slug';
 import { CreateChallengeDto } from './dto/create-challenge.dto';
 import { UpdateChallengeDto } from './dto/update-challenge.dto';
 import { CreateLectureDto } from './dto/create-lecture.dto';
+import { UpdateLectureDto } from './dto/update-lecture.dto';
 import { CreateNoticeDto } from './dto/create-notice.dto';
 import { CreateCurriculumDto } from './dto/create-curriculum.dto';
 import { UpdateCurriculumDto } from './dto/update-curriculum.dto';
@@ -127,7 +128,97 @@ export class AdminService {
     await this.adminLog.log(adminId, 'lecture.create', 'lecture', lecture.id, {
       title: lecture.title,
     });
-    return lecture;
+    return this.getLecture(lecture.id);
+  }
+
+  async getLecture(id: string) {
+    const lecture = await this.prisma.lecture.findUnique({
+      where: { id },
+      include: {
+        category: { select: { id: true, name: true, slug: true } },
+        versions: { orderBy: { version: 'desc' }, take: 1 },
+      },
+    });
+
+    if (!lecture) {
+      throw new NotFoundException('Lecture not found');
+    }
+
+    const version = lecture.versions[0];
+
+    return {
+      id: lecture.id,
+      title: lecture.title,
+      slug: lecture.slug,
+      description: lecture.description,
+      categoryId: lecture.categoryId,
+      category: lecture.category,
+      content: version?.content ?? '',
+      isPublished: version?.isPublished ?? false,
+      version: version?.version ?? 0,
+      updatedAt: lecture.updatedAt,
+    };
+  }
+
+  async updateLecture(adminId: string, id: string, dto: UpdateLectureDto) {
+    const lecture = await this.prisma.lecture.findUnique({
+      where: { id },
+      include: {
+        versions: { orderBy: { version: 'desc' }, take: 1 },
+      },
+    });
+
+    if (!lecture) {
+      throw new NotFoundException('Lecture not found');
+    }
+
+    if (dto.slug && dto.slug !== lecture.slug) {
+      const conflict = await this.prisma.lecture.findUnique({
+        where: { slug: dto.slug },
+      });
+      if (conflict && conflict.id !== id) {
+        throw new ConflictException('Slug already in use');
+      }
+    }
+
+    await this.prisma.lecture.update({
+      where: { id },
+      data: {
+        ...(dto.title !== undefined && { title: dto.title }),
+        ...(dto.description !== undefined && { description: dto.description }),
+        ...(dto.categoryId !== undefined && { categoryId: dto.categoryId }),
+        ...(dto.slug !== undefined && { slug: dto.slug }),
+      },
+    });
+
+    const latest = lecture.versions[0];
+    const content = dto.content ?? latest?.content ?? '';
+    const isPublished = dto.isPublished ?? latest?.isPublished ?? false;
+
+    if (latest) {
+      await this.prisma.lectureVersion.update({
+        where: { id: latest.id },
+        data: {
+          content,
+          isPublished,
+        },
+      });
+    } else {
+      await this.prisma.lectureVersion.create({
+        data: {
+          lectureId: id,
+          version: 1,
+          content,
+          isPublished,
+        },
+      });
+    }
+
+    await this.adminLog.log(adminId, 'lecture.update', 'lecture', id, {
+      title: dto.title ?? lecture.title,
+    });
+
+    return this.getLecture(id);
   }
 
   async deleteLecture(adminId: string, id: string) {

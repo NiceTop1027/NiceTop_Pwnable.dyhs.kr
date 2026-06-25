@@ -168,6 +168,19 @@ export type Curriculum = {
   _count: { items: number };
 };
 
+export type AdminLecture = {
+  id: string;
+  title: string;
+  slug: string;
+  description: string | null;
+  categoryId: string;
+  category: { id: string; name: string; slug: string };
+  content: string;
+  isPublished: boolean;
+  version: number;
+  updatedAt: string;
+};
+
 export type AdminCurriculum = {
   id: string;
   title: string;
@@ -335,8 +348,29 @@ export const adminApi = {
       isPublished?: boolean;
     },
   ) =>
-    apiFetch("/admin/lectures", {
+    apiFetch<AdminLecture>("/admin/lectures", {
       method: "POST",
+      body: JSON.stringify(data),
+      token,
+    }),
+
+  getLecture: (token: string, id: string) =>
+    apiFetch<AdminLecture>(`/admin/lectures/${id}`, { token }),
+
+  updateLecture: (
+    token: string,
+    id: string,
+    data: {
+      categoryId?: string;
+      title?: string;
+      description?: string;
+      content?: string;
+      isPublished?: boolean;
+      slug?: string;
+    },
+  ) =>
+    apiFetch<AdminLecture>(`/admin/lectures/${id}`, {
+      method: "PATCH",
       body: JSON.stringify(data),
       token,
     }),

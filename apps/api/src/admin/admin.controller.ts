@@ -14,6 +14,7 @@ import { AdminLogService } from './admin-log.service';
 import { CreateChallengeDto } from './dto/create-challenge.dto';
 import { UpdateChallengeDto } from './dto/update-challenge.dto';
 import { CreateLectureDto } from './dto/create-lecture.dto';
+import { UpdateLectureDto } from './dto/update-lecture.dto';
 import { CreateNoticeDto } from './dto/create-notice.dto';
 import { CreateCurriculumDto } from './dto/create-curriculum.dto';
 import { UpdateCurriculumDto } from './dto/update-curriculum.dto';
@@ -67,6 +68,20 @@ export class AdminController {
     @Body() dto: CreateLectureDto,
   ) {
     return this.adminService.createLecture(admin.id, dto);
+  }
+
+  @Get('lectures/:id')
+  getLecture(@Param('id') id: string) {
+    return this.adminService.getLecture(id);
+  }
+
+  @Patch('lectures/:id')
+  updateLecture(
+    @CurrentUser() admin: { id: string },
+    @Param('id') id: string,
+    @Body() dto: UpdateLectureDto,
+  ) {
+    return this.adminService.updateLecture(admin.id, id, dto);
   }
 
   @Delete('lectures/:id')
