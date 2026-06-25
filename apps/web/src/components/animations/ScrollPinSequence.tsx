@@ -102,14 +102,13 @@ function ScrollProgressBar({
   active: number;
   total: number;
 }) {
+  const fill = Math.round(Math.max(0, Math.min(1, progress)) * 100);
+
   return (
-    <div className="scroll-progress-bar" aria-label="챕터 진행">
+    <div className="scroll-progress-bar" aria-label="챕터 진행" aria-live="polite">
       <span className="scroll-progress-count">{String(active + 1).padStart(2, "0")}</span>
-      <div className="scroll-progress-track">
-        <div
-          className="scroll-progress-fill"
-          style={{ width: `${Math.round(Math.max(0, Math.min(1, progress)) * 100)}%` }}
-        />
+      <div className="scroll-progress-track" aria-hidden>
+        <div className="scroll-progress-fill" style={{ width: `${fill}%` }} />
       </div>
       <span className="scroll-progress-total">{String(total).padStart(2, "0")}</span>
     </div>
