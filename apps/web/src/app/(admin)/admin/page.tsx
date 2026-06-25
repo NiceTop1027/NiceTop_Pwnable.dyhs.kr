@@ -6,8 +6,33 @@ import { getAccessToken } from "@/providers/AuthProvider";
 import { AdminCard } from "@/components/admin/ui/AdminCard";
 import { AdminEmpty } from "@/components/admin/ui/AdminEmpty";
 
+type AdminStats = {
+  users: number;
+  lectures: number;
+  challenges: number;
+  solves: number;
+  notices: number;
+  posts: number;
+};
+
+function normalizeStats(raw: Record<string, number> | null): AdminStats | null {
+  if (!raw) return null;
+  return {
+    users: raw.users ?? 0,
+    lectures: raw.lectures ?? 0,
+    challenges: raw.challenges ?? 0,
+    solves: raw.solves ?? 0,
+    notices: raw.notices ?? 0,
+    posts: raw.posts ?? 0,
+  };
+}
+
+function formatStat(value: number) {
+  return value.toLocaleString("ko-KR");
+}
+
 export default function AdminDashboardPage() {
-  const [stats, setStats] = useState<Record<string, number> | null>(null);
+  const [stats, setStats] = useState<AdminStats | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -18,7 +43,7 @@ export default function AdminDashboardPage() {
     }
     adminApi
       .stats(token)
-      .then(setStats)
+      .then((data) => setStats(normalizeStats(data)))
       .catch(() => setStats(null))
       .finally(() => setLoading(false));
   }, []);
@@ -50,7 +75,7 @@ export default function AdminDashboardPage() {
           {items.map((item) => (
             <div key={item.label} className="admin-stat-card">
               <p className="admin-stat-label">{item.label}</p>
-              <p className="admin-stat-value">{(item.value ?? 0).toLocaleString("ko-KR")}</p>
+              <p className="admin-stat-value">{formatStat(item.value)}</p>
             </div>
           ))}
         </div>
