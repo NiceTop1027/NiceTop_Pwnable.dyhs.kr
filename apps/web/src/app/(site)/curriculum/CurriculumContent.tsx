@@ -1,8 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useRef } from "react";
-import { motion, useScroll, useTransform } from "framer-motion";
 import PageHeader from "@/components/ui/PageHeader";
 import { Button } from "@/components/ui/Button";
 import { FadeIn } from "@/components/pages/FadeIn";
@@ -10,64 +8,56 @@ import { DocumentContent } from "@/components/content/DocumentContent";
 import { useAuth } from "@/providers/AuthProvider";
 import type { CurriculumTrack } from "@/lib/curriculum";
 
-function TrackSection({ track, index }: { track: CurriculumTrack; index: number }) {
-  const ref = useRef<HTMLDivElement>(null);
-  const { scrollYProgress } = useScroll({
-    target: ref,
-    offset: ["start end", "center center"],
-  });
-  const opacity = useTransform(scrollYProgress, [0, 0.4], [0, 1]);
-  const y = useTransform(scrollYProgress, [0, 0.4], [40, 0]);
-
+function TrackCard({ track, index }: { track: CurriculumTrack; index: number }) {
   return (
-    <section ref={ref} className="curriculum-track">
-      <motion.div style={{ opacity, y }}>
-        <header className="curriculum-track-header">
-          <span className="curriculum-track-index">{String(index + 1).padStart(2, "0")}</span>
-          <div>
-            <p className="text-eyebrow">{track.name}</p>
-            <h2 className="curriculum-track-title">{track.label} 트랙</h2>
-          </div>
-        </header>
+    <article className="curriculum-track-card">
+      <header className="curriculum-track-card-header">
+        <span className="curriculum-track-index">{String(index + 1).padStart(2, "0")}</span>
+        <div className="curriculum-track-card-heading">
+          <p className="text-eyebrow">{track.name}</p>
+          <h2 className="curriculum-track-title">{track.label} 트랙</h2>
+        </div>
+      </header>
 
-        {track.desc && (
-          <div className="curriculum-track-body">
-            <DocumentContent content={track.desc} />
-          </div>
-        )}
+      {track.desc && (
+        <div className="curriculum-track-body">
+          <DocumentContent content={track.desc} />
+        </div>
+      )}
 
-        {track.steps.length > 0 ? (
-          <ol className="curriculum-step-list">
-            {track.steps.map((step, i) => {
-              const content = (
-                <>
-                  <span className="curriculum-step-index">{String(i + 1).padStart(2, "0")}</span>
-                  <span className="curriculum-step-body">
-                    <span className="curriculum-step-title">{step.title}</span>
-                    {step.desc && <span className="curriculum-step-desc">{step.desc}</span>}
-                  </span>
-                  {step.href && <span className="curriculum-step-arrow" aria-hidden>›</span>}
-                </>
-              );
+      {track.steps.length > 0 ? (
+        <ol className="curriculum-step-list">
+          {track.steps.map((step, i) => {
+            const content = (
+              <>
+                <span className="curriculum-step-index">{String(i + 1).padStart(2, "0")}</span>
+                <span className="curriculum-step-body">
+                  <span className="curriculum-step-title">{step.title}</span>
+                  {step.desc && <span className="curriculum-step-desc">{step.desc}</span>}
+                </span>
+                {step.href && <span className="curriculum-step-arrow" aria-hidden>›</span>}
+              </>
+            );
 
-              return (
-                <li key={`${step.title}-${i}`} className="curriculum-step">
-                  {step.href ? (
-                    <Link href={step.href} className="curriculum-step-link">
-                      {content}
-                    </Link>
-                  ) : (
-                    <div className="curriculum-step-link curriculum-step-link-static">{content}</div>
-                  )}
-                </li>
-              );
-            })}
-          </ol>
-        ) : (
-          <p className="text-body py-8">아직 등록된 항목이 없습니다</p>
-        )}
-      </motion.div>
-    </section>
+            return (
+              <li key={`${step.title}-${i}`} className="curriculum-step">
+                {step.href ? (
+                  <Link href={step.href} className="curriculum-step-link">
+                    {content}
+                  </Link>
+                ) : (
+                  <div className="curriculum-step-link curriculum-step-link-static">
+                    {content}
+                  </div>
+                )}
+              </li>
+            );
+          })}
+        </ol>
+      ) : (
+        <p className="curriculum-track-empty">아직 등록된 항목이 없습니다</p>
+      )}
+    </article>
   );
 }
 
@@ -77,7 +67,7 @@ export default function CurriculumContent({ tracks }: { tracks: CurriculumTrack[
     tracks.flatMap((t) => t.steps).find((s) => s.href)?.href ?? "/wargame";
 
   return (
-    <div className="curriculum-page pb-24">
+    <div className="curriculum-page">
       <FadeIn>
         <PageHeader
           title="커리큘럼"
@@ -86,11 +76,13 @@ export default function CurriculumContent({ tracks }: { tracks: CurriculumTrack[
       </FadeIn>
 
       {tracks.length > 0 ? (
-        <div className="curriculum-tracks">
-          {tracks.map((track, i) => (
-            <TrackSection key={track.slug} track={track} index={i} />
-          ))}
-        </div>
+        <FadeIn delay={0.08}>
+          <div className="curriculum-board">
+            {tracks.map((track, i) => (
+              <TrackCard key={track.slug} track={track} index={i} />
+            ))}
+          </div>
+        </FadeIn>
       ) : (
         <FadeIn>
           <p className="text-body py-16 text-center">등록된 커리큘럼이 없습니다</p>
@@ -98,7 +90,7 @@ export default function CurriculumContent({ tracks }: { tracks: CurriculumTrack[
       )}
 
       {!isLoading && (
-        <FadeIn>
+        <FadeIn delay={0.12}>
           <div className="curriculum-cta">
             {user ? (
               <>
