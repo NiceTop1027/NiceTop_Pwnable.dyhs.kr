@@ -33,7 +33,7 @@ export const adminNav: AdminNavItem[] = [
     href: "/admin/curriculum",
     label: "커리큘럼",
     icon: BookOpen,
-    description: "Notion 스타일 에디터로 학습 문서를 작성합니다",
+    description: "커리큘럼 트랙과 학습 문서를 관리합니다",
   },
   {
     href: "/admin/notices",

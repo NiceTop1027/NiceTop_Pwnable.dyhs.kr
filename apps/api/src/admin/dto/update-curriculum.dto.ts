@@ -1,4 +1,4 @@
-import { IsEnum, IsOptional, IsString, MinLength } from 'class-validator';
+import { IsEnum, IsInt, IsOptional, IsString, MinLength } from 'class-validator';
 import { CurriculumTier } from '@prisma/client';
 
 export class UpdateCurriculumDto {
@@ -17,4 +17,8 @@ export class UpdateCurriculumDto {
   @IsOptional()
   @IsEnum(CurriculumTier)
   tier?: CurriculumTier;
+
+  @IsOptional()
+  @IsInt()
+  order?: number;
 }

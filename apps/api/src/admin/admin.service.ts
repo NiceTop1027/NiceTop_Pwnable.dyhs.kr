@@ -363,8 +363,20 @@ export class AdminService {
     });
   }
 
+  private async uniqueCurriculumSlug(base: string): Promise<string> {
+    let slug = base;
+    let suffix = 2;
+
+    while (await this.prisma.curriculum.findUnique({ where: { slug } })) {
+      slug = `${base}-${suffix}`;
+      suffix += 1;
+    }
+
+    return slug;
+  }
+
   async createCurriculum(adminId: string, dto: CreateCurriculumDto) {
-    const slug = dto.slug ?? slugify(dto.title);
+    const slug = await this.uniqueCurriculumSlug(dto.slug ?? slugify(dto.title));
     const maxOrder = await this.prisma.curriculum.aggregate({
       _max: { order: true },
     });
@@ -377,7 +389,7 @@ export class AdminService {
         content: dto.content
           ? (dto.content as Prisma.InputJsonValue)
           : undefined,
-        tier: dto.tier,
+        tier: dto.tier ?? 'BEGINNER',
         order: (maxOrder._max.order ?? 0) + 1,
       },
     });
@@ -389,7 +401,7 @@ export class AdminService {
       curriculum.id,
       { title: curriculum.title },
     );
-    return curriculum;
+    return this.getCurriculum(curriculum.id);
   }
 
   async addCurriculumItem(
@@ -449,13 +461,13 @@ export class AdminService {
     const curriculum = await this.prisma.curriculum.update({
       where: { id },
       data: {
-        title: dto.title,
-        description: dto.description,
-        content:
-          dto.content === undefined
-            ? undefined
-            : (dto.content as Prisma.InputJsonValue),
-        tier: dto.tier,
+        ...(dto.title !== undefined && { title: dto.title }),
+        ...(dto.description !== undefined && { description: dto.description }),
+        ...(dto.content !== undefined && {
+          content: dto.content as Prisma.InputJsonValue,
+        }),
+        ...(dto.tier !== undefined && { tier: dto.tier }),
+        ...(dto.order !== undefined && { order: dto.order }),
       },
     });
 
@@ -466,7 +478,66 @@ export class AdminService {
       curriculum.id,
       { title: curriculum.title },
     );
-    return curriculum;
+    return this.getCurriculum(curriculum.id);
+  }
+
+  async deleteCurriculumItem(
+    adminId: string,
+    curriculumId: string,
+    itemId: string,
+  ) {
+    const item = await this.prisma.curriculumItem.findFirst({
+      where: { id: itemId, curriculumId },
+    });
+    if (!item) throw new NotFoundException('Curriculum item not found');
+
+    await this.prisma.curriculumItem.delete({ where: { id: itemId } });
+    await this.adminLog.log(
+      adminId,
+      'curriculum.item.delete',
+      'curriculumItem',
+      itemId,
+      { curriculumId },
+    );
+    return { success: true };
+  }
+
+  async reorderCurriculumItems(
+    adminId: string,
+    curriculumId: string,
+    itemIds: string[],
+  ) {
+    const items = await this.prisma.curriculumItem.findMany({
+      where: { curriculumId },
+      select: { id: true },
+    });
+
+    if (items.length !== itemIds.length) {
+      throw new NotFoundException('Invalid curriculum item order');
+    }
+
+    const knownIds = new Set(items.map((item) => item.id));
+    if (!itemIds.every((id) => knownIds.has(id))) {
+      throw new NotFoundException('Invalid curriculum item order');
+    }
+
+    await this.prisma.$transaction(
+      itemIds.map((id, index) =>
+        this.prisma.curriculumItem.update({
+          where: { id },
+          data: { order: index + 1 },
+        }),
+      ),
+    );
+
+    await this.adminLog.log(
+      adminId,
+      'curriculum.item.reorder',
+      'curriculum',
+      curriculumId,
+      { itemIds },
+    );
+    return this.getCurriculum(curriculumId);
   }
 
   async deleteCurriculum(adminId: string, id: string) {

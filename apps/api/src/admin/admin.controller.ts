@@ -178,6 +178,24 @@ export class AdminController {
     return this.adminService.addCurriculumItem(admin.id, id, body);
   }
 
+  @Delete('curricula/:id/items/:itemId')
+  deleteCurriculumItem(
+    @CurrentUser() admin: { id: string },
+    @Param('id') id: string,
+    @Param('itemId') itemId: string,
+  ) {
+    return this.adminService.deleteCurriculumItem(admin.id, id, itemId);
+  }
+
+  @Patch('curricula/:id/items/reorder')
+  reorderCurriculumItems(
+    @CurrentUser() admin: { id: string },
+    @Param('id') id: string,
+    @Body() body: { itemIds: string[] },
+  ) {
+    return this.adminService.reorderCurriculumItems(admin.id, id, body.itemIds);
+  }
+
   @Get('notices')
   listNotices() {
     return this.adminService.listNotices();

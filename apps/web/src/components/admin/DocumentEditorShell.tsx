@@ -31,6 +31,7 @@ type DocumentEditorShellProps = {
   notFound?: boolean;
   loading?: boolean;
   loadingMessage?: string;
+  footer?: ReactNode;
 };
 
 function SaveStatus({
@@ -88,6 +89,7 @@ export function DocumentEditorShell({
   notFound = false,
   loading = false,
   loadingMessage = "문서 불러오는 중",
+  footer,
 }: DocumentEditorShellProps) {
   if (loading) {
     return (
@@ -204,6 +206,8 @@ export function DocumentEditorShell({
             onChange={onBlocksChange}
           />
         </div>
+
+        {footer}
       </article>
     </div>
   );

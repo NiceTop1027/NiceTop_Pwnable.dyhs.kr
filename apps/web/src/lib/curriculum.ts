@@ -44,12 +44,19 @@ export const DEFAULT_CURRICULUM_TRACKS: CurriculumTrack[] = [
   },
 ];
 
-const tierLabels: Record<string, string> = {
+export const CURRICULUM_TIER_LABELS: Record<string, string> = {
   BEGINNER: "입문",
   INTERMEDIATE: "중급",
   ADVANCED: "고급",
   EXPERT: "전문",
 };
+
+export const CURRICULUM_TIER_OPTIONS = [
+  { value: "BEGINNER", label: "BEGINNER · 입문" },
+  { value: "INTERMEDIATE", label: "INTERMEDIATE · 중급" },
+  { value: "ADVANCED", label: "ADVANCED · 고급" },
+  { value: "EXPERT", label: "EXPERT · 전문" },
+] as const;
 
 function findDefaultTrack(track: CurriculumTrack) {
   return DEFAULT_CURRICULUM_TRACKS.find(
@@ -101,7 +108,7 @@ export function mapCurriculaToTracks(
   return curricula.map((c) => ({
     slug: c.slug,
     name: c.tier,
-    label: tierLabels[c.tier] ?? c.title,
+    label: c.title || CURRICULUM_TIER_LABELS[c.tier] || c.tier,
     desc: c.description ?? "",
     steps: c.items.map((item) => {
       if (item.lecture) {

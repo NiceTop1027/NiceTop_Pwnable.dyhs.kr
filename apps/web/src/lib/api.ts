@@ -196,6 +196,24 @@ export type AdminChallenge = {
   updatedAt: string;
 };
 
+export type AdminCurriculumItem = {
+  id: string;
+  order: number;
+  lecture: { id: string; title: string; slug: string } | null;
+  challenge: { id: string; title: string; slug: string } | null;
+};
+
+export type AdminCurriculum = {
+  id: string;
+  title: string;
+  slug: string;
+  description: string | null;
+  tier: string;
+  order: number;
+  items: AdminCurriculumItem[];
+  updatedAt?: string;
+};
+
 export const api = {
   health: () => apiFetch<{ status: string }>("/health"),
 
@@ -443,6 +461,77 @@ export const adminApi = {
 
   deleteNotice: (token: string, id: string) =>
     apiFetch(`/admin/notices/${id}`, { method: "DELETE", token }),
+
+  curricula: (token: string) =>
+    apiFetch<AdminCurriculum[]>("/admin/curricula", { token }),
+
+  createCurriculum: (
+    token: string,
+    data: {
+      title: string;
+      description?: string;
+      tier?: string;
+    },
+  ) =>
+    apiFetch<AdminCurriculum>("/admin/curricula", {
+      method: "POST",
+      body: JSON.stringify(data),
+      token,
+    }),
+
+  getCurriculum: (token: string, id: string) =>
+    apiFetch<AdminCurriculum>(`/admin/curricula/${id}`, { token }),
+
+  updateCurriculum: (
+    token: string,
+    id: string,
+    data: {
+      title?: string;
+      description?: string;
+      tier?: string;
+      order?: number;
+    },
+  ) =>
+    apiFetch<AdminCurriculum>(`/admin/curricula/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(data),
+      token,
+    }),
+
+  deleteCurriculum: (token: string, id: string) =>
+    apiFetch(`/admin/curricula/${id}`, { method: "DELETE", token }),
+
+  addCurriculumItem: (
+    token: string,
+    curriculumId: string,
+    data: { lectureId?: string; challengeId?: string },
+  ) =>
+    apiFetch<AdminCurriculumItem>(`/admin/curricula/${curriculumId}/items`, {
+      method: "POST",
+      body: JSON.stringify(data),
+      token,
+    }),
+
+  deleteCurriculumItem: (
+    token: string,
+    curriculumId: string,
+    itemId: string,
+  ) =>
+    apiFetch(`/admin/curricula/${curriculumId}/items/${itemId}`, {
+      method: "DELETE",
+      token,
+    }),
+
+  reorderCurriculumItems: (
+    token: string,
+    curriculumId: string,
+    itemIds: string[],
+  ) =>
+    apiFetch<AdminCurriculum>(`/admin/curricula/${curriculumId}/items/reorder`, {
+      method: "PATCH",
+      body: JSON.stringify({ itemIds }),
+      token,
+    }),
 
   uploadContentImage: async (token: string, file: File) => {
     const form = new FormData();

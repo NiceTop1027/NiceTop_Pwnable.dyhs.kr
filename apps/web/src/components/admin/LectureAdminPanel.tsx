@@ -55,8 +55,8 @@ export function LectureAdminPanel() {
 
   return (
     <AdminCard
-      title="커리큘럼 문서"
-      description="Notion 스타일 에디터로 학습 문서를 작성합니다"
+      title="학습 문서"
+      description="트랙 단계에 연결할 Markdown 강의 문서를 작성합니다"
     >
       <div className="admin-form-actions" style={{ marginTop: 0, marginBottom: "1.25rem" }}>
         <Link href="/admin/curriculum/new" className="admin-btn admin-btn-primary">
