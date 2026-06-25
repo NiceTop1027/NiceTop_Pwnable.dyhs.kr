@@ -600,6 +600,378 @@
   }
 }
 
+/* ─── Community boards ─── */
+.board-page {
+  max-width: 48rem;
+  margin: 0 auto;
+}
+
+.board-back-link {
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+  transition: color 0.2s ease;
+}
+
+.board-back-link:hover {
+  color: var(--text);
+}
+
+.board-list-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.board-list-count {
+  font-size: 0.8125rem;
+  color: var(--text-tertiary);
+}
+
+.board-list {
+  display: flex;
+  flex-direction: column;
+  border-top: 1px solid var(--divider);
+}
+
+.board-list-item {
+  display: block;
+  padding: 1.25rem 0;
+  border-bottom: 1px solid var(--divider);
+  transition: opacity 0.2s ease;
+}
+
+.board-list-item:hover {
+  opacity: 0.72;
+}
+
+.board-list-item-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.board-list-item-title {
+  font-size: 1.0625rem;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--text);
+}
+
+.board-list-item-date {
+  flex-shrink: 0;
+  font-size: 0.75rem;
+  color: var(--text-tertiary);
+}
+
+.board-list-item-excerpt {
+  margin-top: 0.5rem;
+  font-size: 0.9375rem;
+  line-height: 1.55;
+  color: var(--text-secondary);
+}
+
+.board-list-item-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+  font-size: 0.75rem;
+  color: var(--text-tertiary);
+}
+
+.board-post-pin {
+  display: inline-flex;
+  margin-right: 0.5rem;
+  padding: 0.1rem 0.45rem;
+  border-radius: 999px;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: #fbbf24;
+  background: rgba(251, 191, 36, 0.12);
+  vertical-align: middle;
+}
+
+.board-empty,
+.board-auth-gate {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  padding: 3rem 1rem;
+  text-align: center;
+  color: var(--text-secondary);
+}
+
+.board-auth-gate--inline {
+  align-items: flex-start;
+  padding: 1.25rem 0;
+  text-align: left;
+}
+
+.board-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 2rem;
+}
+
+.board-pagination-link,
+.board-pagination-current {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+
+.board-pagination-link:hover {
+  color: var(--text);
+}
+
+.board-post-header {
+  margin-bottom: 2rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid var(--divider);
+}
+
+.board-post-board {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+
+.board-post-title {
+  margin-top: 0.75rem;
+  font-size: clamp(1.75rem, 4vw, 2.5rem);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+  color: var(--text);
+}
+
+.board-post-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  font-size: 0.8125rem;
+  color: var(--text-tertiary);
+}
+
+.board-post-body {
+  margin-bottom: 1.5rem;
+}
+
+.board-post-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem 0;
+  border-top: 1px solid var(--divider);
+  border-bottom: 1px solid var(--divider);
+}
+
+.board-post-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.65rem;
+  border-radius: 999px;
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+  background: transparent;
+  border: none;
+  transition: color 0.2s ease, background 0.2s ease;
+}
+
+button.board-post-action {
+  cursor: pointer;
+}
+
+.board-post-action:hover,
+.board-post-action--active {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.board-post-action--active {
+  color: #f87171;
+}
+
+.board-post-action--static {
+  pointer-events: none;
+}
+
+.board-post-action--danger:hover {
+  color: #f87171;
+}
+
+.board-post-owner-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-left: auto;
+}
+
+.board-comments {
+  margin-top: 2rem;
+}
+
+.board-comments-title {
+  margin-bottom: 1rem;
+  font-size: 1.0625rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.board-comment-form,
+.board-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.board-editor-eyebrow {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+
+.board-editor-error {
+  font-size: 0.875rem;
+  color: #f87171;
+}
+
+.board-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.board-field-label {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.board-field-input,
+.board-field-textarea {
+  width: 100%;
+  padding: 0.75rem 0.875rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0.75rem;
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text);
+  font: inherit;
+  line-height: 1.5;
+  resize: vertical;
+}
+
+.board-field-input:focus-visible,
+.board-field-textarea:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.14);
+  outline-offset: 2px;
+}
+
+.board-field-textarea--compact {
+  min-height: 5rem;
+}
+
+.board-editor-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+}
+
+.board-comment-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.board-comment {
+  padding: 1rem 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.board-comment--reply {
+  margin-top: 0.75rem;
+  margin-left: 1.25rem;
+  padding-left: 1rem;
+  border-left: 2px solid rgba(255, 255, 255, 0.08);
+  border-bottom: none;
+}
+
+.board-comment-head {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.board-comment-author {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.board-comment-date {
+  font-size: 0.75rem;
+  color: var(--text-tertiary);
+}
+
+.board-comment-body {
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  color: var(--text-secondary);
+  white-space: pre-wrap;
+}
+
+.board-comment-actions,
+.board-comment-edit-actions {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.board-text-btn {
+  padding: 0;
+  font-size: 0.75rem;
+  color: var(--text-tertiary);
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.board-text-btn:hover,
+.board-text-btn--primary {
+  color: var(--text-secondary);
+}
+
+.board-text-btn--danger:hover {
+  color: #f87171;
+}
+
+.board-reply-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.board-comments-empty {
+  padding: 1.5rem 0;
+  font-size: 0.9375rem;
+  color: var(--text-tertiary);
+}
+
 @media (max-width: 640px) {
   .curriculum-page {
     padding-top: 1.5rem;

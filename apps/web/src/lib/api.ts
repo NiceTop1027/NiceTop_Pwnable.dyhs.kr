@@ -145,6 +145,60 @@ export type Board = {
   _count: { posts: number };
 };
 
+export type BoardAuthor = {
+  id: string;
+  username: string;
+  displayName: string | null;
+};
+
+export type BoardPostSummary = {
+  id: string;
+  title: string;
+  content: string;
+  viewCount: number;
+  isPinned: boolean;
+  createdAt: string;
+  updatedAt: string;
+  author: BoardAuthor;
+  _count: { comments: number; likes: number };
+};
+
+export type BoardPostsResponse = {
+  board: {
+    id: string;
+    name: string;
+    slug: string;
+    type: string;
+    description: string | null;
+  };
+  posts: BoardPostSummary[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+};
+
+export type BoardComment = {
+  id: string;
+  content: string;
+  createdAt: string;
+  updatedAt: string;
+  author: BoardAuthor;
+  replies?: BoardComment[];
+};
+
+export type BoardPostDetail = BoardPostSummary & {
+  board: { name: string; slug: string; type: string };
+  comments: BoardComment[];
+  likedByMe: boolean;
+};
+
+export type AdminCommunityPost = BoardPostSummary & {
+  board: { name: string; slug: string; type: string };
+};
+
 export type Notice = {
   id: string;
   title: string;
@@ -347,6 +401,88 @@ export const api = {
   curricula: () => apiFetch<Curriculum[]>("/curricula"),
 
   boards: () => apiFetch<Board[]>("/boards"),
+
+  boardPosts: (slug: string, page = 1, limit = 20) =>
+    apiFetch<BoardPostsResponse>(
+      `/boards/${slug}/posts?page=${page}&limit=${limit}`,
+    ),
+
+  boardPost: (slug: string, postId: string, token?: string | null) =>
+    apiFetch<BoardPostDetail>(`/boards/${slug}/posts/${postId}`, { token }),
+
+  createBoardPost: (
+    slug: string,
+    token: string,
+    data: { title: string; content: string },
+  ) =>
+    apiFetch<BoardPostSummary>(`/boards/${slug}/posts`, {
+      method: "POST",
+      body: JSON.stringify(data),
+      token,
+    }),
+
+  updateBoardPost: (
+    slug: string,
+    postId: string,
+    token: string,
+    data: { title?: string; content?: string },
+  ) =>
+    apiFetch<BoardPostSummary>(`/boards/${slug}/posts/${postId}`, {
+      method: "PATCH",
+      body: JSON.stringify(data),
+      token,
+    }),
+
+  deleteBoardPost: (slug: string, postId: string, token: string) =>
+    apiFetch<{ success: boolean }>(`/boards/${slug}/posts/${postId}`, {
+      method: "DELETE",
+      token,
+    }),
+
+  toggleBoardPostLike: (slug: string, postId: string, token: string) =>
+    apiFetch<{ liked: boolean }>(`/boards/${slug}/posts/${postId}/like`, {
+      method: "POST",
+      token,
+    }),
+
+  createBoardComment: (
+    slug: string,
+    postId: string,
+    token: string,
+    data: { content: string; parentId?: string },
+  ) =>
+    apiFetch<BoardComment>(`/boards/${slug}/posts/${postId}/comments`, {
+      method: "POST",
+      body: JSON.stringify(data),
+      token,
+    }),
+
+  updateBoardComment: (
+    slug: string,
+    postId: string,
+    commentId: string,
+    token: string,
+    data: { content: string },
+  ) =>
+    apiFetch<BoardComment>(
+      `/boards/${slug}/posts/${postId}/comments/${commentId}`,
+      {
+        method: "PATCH",
+        body: JSON.stringify(data),
+        token,
+      },
+    ),
+
+  deleteBoardComment: (
+    slug: string,
+    postId: string,
+    commentId: string,
+    token: string,
+  ) =>
+    apiFetch<{ success: boolean }>(
+      `/boards/${slug}/posts/${postId}/comments/${commentId}`,
+      { method: "DELETE", token },
+    ),
 
   notices: () => apiFetch<Notice[]>("/notices"),
 
@@ -569,6 +705,26 @@ export const adminApi = {
     apiFetch<AdminCurriculum>(`/admin/curricula/${curriculumId}/items/reorder`, {
       method: "PATCH",
       body: JSON.stringify({ itemIds }),
+      token,
+    }),
+
+  communityPosts: (token: string) =>
+    apiFetch<AdminCommunityPost[]>("/admin/community/posts", { token }),
+
+  updateCommunityPost: (
+    token: string,
+    postId: string,
+    data: { isPinned?: boolean },
+  ) =>
+    apiFetch<AdminCommunityPost>(`/admin/community/posts/${postId}`, {
+      method: "PATCH",
+      body: JSON.stringify(data),
+      token,
+    }),
+
+  deleteCommunityPost: (token: string, postId: string) =>
+    apiFetch(`/admin/community/posts/${postId}`, {
+      method: "DELETE",
       token,
     }),
 

@@ -3,8 +3,8 @@ import {
   Bell,
   BookOpen,
   LayoutDashboard,
+  MessagesSquare,
   Puzzle,
-
   ScrollText,
   Users,
 } from "lucide-react";
@@ -40,6 +40,12 @@ export const adminNav: AdminNavItem[] = [
     label: "공지",
     icon: Bell,
     description: "Notion 스타일 에디터로 공지를 작성합니다",
+  },
+  {
+    href: "/admin/community",
+    label: "커뮤니티",
+    icon: MessagesSquare,
+    description: "자유게시판 · Q&A · 스터디 글을 관리합니다",
   },
   {
     href: "/admin/users",

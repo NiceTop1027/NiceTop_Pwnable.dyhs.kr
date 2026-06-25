@@ -21,6 +21,7 @@ import { UpdateNoticeDto } from './dto/update-notice.dto';
 import { CreateCurriculumDto } from './dto/create-curriculum.dto';
 import { UpdateCurriculumDto } from './dto/update-curriculum.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { UpdateCommunityPostDto } from './dto/update-community-post.dto';
 
 @Injectable()
 export class AdminService {
@@ -36,6 +37,7 @@ export class AdminService {
       challenges,
       solves,
       notices,
+      posts,
       curricula,
       ctfs,
     ] = await Promise.all([
@@ -44,11 +46,12 @@ export class AdminService {
       this.prisma.challenge.count({ where: { isPublished: true } }),
       this.prisma.solve.count(),
       this.prisma.notice.count(),
+      this.prisma.post.count(),
       this.prisma.curriculum.count(),
       this.prisma.ctf.count(),
     ]);
 
-    return { users, lectures, challenges, solves, notices, curricula, ctfs };
+    return { users, lectures, challenges, solves, notices, posts, curricula, ctfs };
   }
 
   async listUsers() {
@@ -654,5 +657,76 @@ export class AdminService {
     });
 
     return { url };
+  }
+
+  async listCommunityPosts(boardSlug?: string) {
+    return this.prisma.post.findMany({
+      where: boardSlug
+        ? { board: { slug: boardSlug, type: { not: 'NOTICE' } } }
+        : { board: { type: { not: 'NOTICE' } } },
+      orderBy: [{ isPinned: 'desc' }, { createdAt: 'desc' }],
+      take: 100,
+      include: {
+        author: {
+          select: { id: true, username: true, displayName: true },
+        },
+        board: {
+          select: { name: true, slug: true, type: true },
+        },
+        _count: { select: { comments: true, likes: true } },
+      },
+    });
+  }
+
+  async updateCommunityPost(
+    adminId: string,
+    postId: string,
+    dto: UpdateCommunityPostDto,
+  ) {
+    const existing = await this.prisma.post.findUnique({
+      where: { id: postId },
+      include: { board: { select: { type: true } } },
+    });
+
+    if (!existing || existing.board.type === 'NOTICE') {
+      throw new NotFoundException('Post not found');
+    }
+
+    const post = await this.prisma.post.update({
+      where: { id: postId },
+      data: {
+        ...(dto.isPinned !== undefined && { isPinned: dto.isPinned }),
+      },
+      include: {
+        author: {
+          select: { id: true, username: true, displayName: true },
+        },
+        board: {
+          select: { name: true, slug: true, type: true },
+        },
+        _count: { select: { comments: true, likes: true } },
+      },
+    });
+
+    await this.adminLog.log(adminId, 'post.update', 'post', postId, {
+      isPinned: post.isPinned,
+    });
+
+    return post;
+  }
+
+  async deleteCommunityPost(adminId: string, postId: string) {
+    const existing = await this.prisma.post.findUnique({
+      where: { id: postId },
+      include: { board: { select: { type: true } } },
+    });
+
+    if (!existing || existing.board.type === 'NOTICE') {
+      throw new NotFoundException('Post not found');
+    }
+
+    await this.prisma.post.delete({ where: { id: postId } });
+    await this.adminLog.log(adminId, 'post.delete', 'post', postId);
+    return { success: true };
   }
 }

@@ -26,6 +26,7 @@ import { UpdateNoticeDto } from './dto/update-notice.dto';
 import { CreateCurriculumDto } from './dto/create-curriculum.dto';
 import { UpdateCurriculumDto } from './dto/update-curriculum.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { UpdateCommunityPostDto } from './dto/update-community-post.dto';
 
 @AdminRoles()
 @Controller('admin')
@@ -229,6 +230,28 @@ export class AdminController {
     @Param('id') id: string,
   ) {
     return this.adminService.deleteNotice(admin.id, id);
+  }
+
+  @Get('community/posts')
+  listCommunityPosts() {
+    return this.adminService.listCommunityPosts();
+  }
+
+  @Patch('community/posts/:id')
+  updateCommunityPost(
+    @CurrentUser() admin: { id: string },
+    @Param('id') id: string,
+    @Body() dto: UpdateCommunityPostDto,
+  ) {
+    return this.adminService.updateCommunityPost(admin.id, id, dto);
+  }
+
+  @Delete('community/posts/:id')
+  deleteCommunityPost(
+    @CurrentUser() admin: { id: string },
+    @Param('id') id: string,
+  ) {
+    return this.adminService.deleteCommunityPost(admin.id, id);
   }
 
   @Get('ctf')

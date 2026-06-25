@@ -30,6 +30,7 @@ export default function AdminDashboardPage() {
         { label: "공개 문제", value: stats.challenges },
         { label: "풀이", value: stats.solves },
         { label: "공지", value: stats.notices },
+        { label: "커뮤니티 글", value: stats.posts },
       ]
     : [];
 
