@@ -1,29 +1,38 @@
-import { hasRoleBadge, roleBadgeLabels, type UserRole } from "@/lib/roles";
+import { Crown, Gavel, Shield } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+import { hasRoleBadge, roleTitles, type UserRole } from "@/lib/roles";
 
 type UserRoleBadgeProps = {
   role?: string | null;
   className?: string;
 };
 
+const roleIcons: Record<
+  Exclude<UserRole, "USER">,
+  { Icon: LucideIcon; variant: string; filled?: boolean }
+> = {
+  OWNER: { Icon: Crown, variant: "owner", filled: true },
+  ADMIN: { Icon: Shield, variant: "admin" },
+  MODERATOR: { Icon: Gavel, variant: "moderator" },
+};
+
 export function UserRoleBadge({ role, className = "" }: UserRoleBadgeProps) {
   if (!hasRoleBadge(role)) return null;
 
-  const label = roleBadgeLabels[role as Exclude<UserRole, "USER">];
-  const variant =
-    role === "OWNER" ? "owner" : role === "ADMIN" ? "admin" : "moderator";
+  const staffRole = role as Exclude<UserRole, "USER">;
+  const { Icon, variant, filled } = roleIcons[staffRole];
 
   return (
     <span
-      className={`role-badge role-badge--${variant}${className ? ` ${className}` : ""}`}
-      title={
-        role === "OWNER"
-          ? "소유자"
-          : role === "ADMIN"
-            ? "관리자"
-            : "모더레이터"
-      }
+      className={`role-mark role-mark--${variant}${className ? ` ${className}` : ""}`}
+      title={roleTitles[staffRole]}
+      aria-label={roleTitles[staffRole]}
     >
-      {label}
+      <Icon
+        className={`role-mark-icon${filled ? " role-mark-icon--filled" : ""}`}
+        strokeWidth={1.75}
+        aria-hidden
+      />
     </span>
   );
 }
