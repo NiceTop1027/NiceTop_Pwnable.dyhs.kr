@@ -1,5 +1,4 @@
 import { notFound } from "next/navigation";
-import { FadeIn } from "@/components/pages/FadeIn";
 import { PostEditor } from "@/components/community/PostEditor";
 import { api } from "@/lib/api";
 
@@ -27,10 +26,6 @@ export default async function BoardNewPostPage({ params }: Props) {
   }
 
   return (
-    <div className="board-page pb-24">
-      <FadeIn>
-        <PostEditor boardSlug={slug} boardName={boardName} mode="create" />
-      </FadeIn>
-    </div>
+    <PostEditor boardSlug={slug} boardName={boardName} mode="create" />
   );
 }

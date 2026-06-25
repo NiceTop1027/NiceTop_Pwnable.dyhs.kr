@@ -4,7 +4,7 @@ import Link from "next/link";
 import { FormEvent, useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Heart, MessageCircle, Pencil, Trash2 } from "lucide-react";
-import { MarkdownContent } from "@/components/content/MarkdownContent";
+import { DocumentContent } from "@/components/content/DocumentContent";
 import { Button } from "@/components/ui/Button";
 import {
   api,
@@ -324,8 +324,8 @@ export function PostDetailView({
         </div>
       </header>
 
-      <div className="board-post-body doc-prose">
-        <MarkdownContent content={post.content} />
+      <div className="board-post-body">
+        <DocumentContent content={post.content} />
       </div>
 
       <div className="board-post-toolbar">

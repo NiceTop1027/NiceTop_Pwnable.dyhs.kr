@@ -835,7 +835,9 @@ button.board-post-action {
   gap: 1rem;
 }
 
-.board-editor-eyebrow {
+.board-editor-board-label {
+  margin-top: 2rem;
+  text-align: center;
   font-size: 0.75rem;
   font-weight: 600;
   letter-spacing: 0.1em;
@@ -846,6 +848,19 @@ button.board-post-action {
 .board-editor-error {
   font-size: 0.875rem;
   color: #f87171;
+}
+
+.board-editor-error--floating {
+  position: fixed;
+  top: 5.5rem;
+  left: 50%;
+  z-index: 40;
+  transform: translateX(-50%);
+  padding: 0.5rem 0.875rem;
+  border-radius: 0.5rem;
+  background: rgba(10, 10, 12, 0.92);
+  border: 1px solid rgba(248, 113, 113, 0.35);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
 }
 
 .board-field {
