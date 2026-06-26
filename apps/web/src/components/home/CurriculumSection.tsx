@@ -1,19 +1,17 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import {
-  motion,
-  useMotionValueEvent,
-  useScroll,
-  useSpring,
-  useTransform,
-  type MotionValue,
-} from "framer-motion";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { motion } from "framer-motion";
 import { Button } from "@/components/ui/Button";
 import { resolveHomeCurriculumTracks, type CurriculumTrack } from "@/lib/curriculum";
 import { useHydrated } from "@/lib/use-hydrated";
 
 const TRACK_SCROLL_VH = 100;
+const SNAP_DURATION_MS = 680;
+
+function easeOutCubic(t: number) {
+  return 1 - (1 - t) ** 3;
+}
 
 function TrackSlide({
   track,
@@ -25,18 +23,18 @@ function TrackSlide({
   activeIndex: number;
 }) {
   const isActive = index === activeIndex;
+  const offset = index - activeIndex;
 
   return (
     <motion.div
       initial={false}
       animate={{
         opacity: isActive ? 1 : 0,
-        y: isActive ? 0 : 24,
-        scale: isActive ? 1 : 0.97,
-        filter: isActive ? "blur(0px)" : "blur(8px)",
+        y: isActive ? 0 : offset < 0 ? -18 : 18,
       }}
-      transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+      transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
       className="absolute inset-0 flex flex-col justify-center"
+      style={{ pointerEvents: isActive ? "auto" : "none" }}
       aria-hidden={!isActive}
     >
       <p className="text-eyebrow mb-4">{track.name}</p>
@@ -79,7 +77,7 @@ function ProgressDots({
             width: i === activeIndex ? 20 : 6,
             opacity: i === activeIndex ? 1 : 0.25,
           }}
-          transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+          transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
           className="h-1.5 rounded-full bg-[var(--text)]"
         />
       ))}
@@ -90,31 +88,16 @@ function ProgressDots({
 export function CurriculumSection({ tracks }: { tracks: CurriculumTrack[] }) {
   const ref = useRef<HTMLDivElement>(null);
   const snapLock = useRef(false);
+  const snapFrame = useRef<number | null>(null);
+  const activeIndexRef = useRef(0);
   const hydrated = useHydrated();
   const displayTracks = resolveHomeCurriculumTracks(tracks);
   const [activeIndex, setActiveIndex] = useState(0);
 
-  const { scrollYProgress } = useScroll({
-    target: ref,
-    offset: ["start start", "end end"],
-  });
-
-  const smoothProgress = useSpring(scrollYProgress, {
-    stiffness: 280,
-    damping: 36,
-    mass: 0.25,
-  });
-
-  const progressIndex = useTransform(smoothProgress, (value) =>
-    Math.min(
-      displayTracks.length - 1,
-      Math.max(0, Math.round(value * Math.max(displayTracks.length - 1, 1))),
-    ),
-  );
-
-  useMotionValueEvent(progressIndex, "change", (value) => {
-    setActiveIndex(value);
-  });
+  const setIndex = useCallback((index: number) => {
+    activeIndexRef.current = index;
+    setActiveIndex(index);
+  }, []);
 
   useEffect(() => {
     const section = ref.current;
@@ -126,8 +109,12 @@ export function CurriculumSection({ tracks }: { tracks: CurriculumTrack[] }) {
       return (window.innerHeight * TRACK_SCROLL_VH) / 100;
     }
 
+    function getSectionTop() {
+      return section!.getBoundingClientRect().top + window.scrollY;
+    }
+
     function getCurrentIndex() {
-      const sectionTop = section!.offsetTop;
+      const sectionTop = getSectionTop();
       const relative = window.scrollY - sectionTop;
       const trackHeight = getTrackHeight();
       return Math.min(
@@ -136,17 +123,46 @@ export function CurriculumSection({ tracks }: { tracks: CurriculumTrack[] }) {
       );
     }
 
+    function cancelSnapAnimation() {
+      if (snapFrame.current !== null) {
+        cancelAnimationFrame(snapFrame.current);
+        snapFrame.current = null;
+      }
+    }
+
     function snapTo(index: number) {
-      const sectionTop = section!.offsetTop;
-      const trackHeight = getTrackHeight();
+      cancelSnapAnimation();
       snapLock.current = true;
-      window.scrollTo({
-        top: sectionTop + index * trackHeight,
-        behavior: "smooth",
-      });
-      window.setTimeout(() => {
+      setIndex(index);
+
+      const sectionTop = getSectionTop();
+      const target = sectionTop + index * getTrackHeight();
+      const start = window.scrollY;
+      const distance = target - start;
+
+      if (Math.abs(distance) < 2) {
         snapLock.current = false;
-      }, 520);
+        return;
+      }
+
+      const startTime = performance.now();
+
+      function step(now: number) {
+        const progress = Math.min(1, (now - startTime) / SNAP_DURATION_MS);
+        window.scrollTo(0, start + distance * easeOutCubic(progress));
+
+        if (progress < 1) {
+          snapFrame.current = requestAnimationFrame(step);
+          return;
+        }
+
+        snapFrame.current = null;
+        window.setTimeout(() => {
+          snapLock.current = false;
+        }, 80);
+      }
+
+      snapFrame.current = requestAnimationFrame(step);
     }
 
     function onWheel(event: WheelEvent) {
@@ -156,13 +172,14 @@ export function CurriculumSection({ tracks }: { tracks: CurriculumTrack[] }) {
       }
 
       const rect = section!.getBoundingClientRect();
-      const inSection = rect.top <= 0 && rect.bottom >= window.innerHeight * 0.5;
+      const inSection =
+        rect.top <= 8 && rect.bottom >= window.innerHeight * 0.45;
       if (!inSection) return;
 
       const delta = event.deltaY;
-      if (Math.abs(delta) < 4) return;
+      if (Math.abs(delta) < 2) return;
 
-      const current = getCurrentIndex();
+      const current = activeIndexRef.current;
       const next =
         delta > 0
           ? Math.min(trackCount - 1, current + 1)
@@ -170,17 +187,31 @@ export function CurriculumSection({ tracks }: { tracks: CurriculumTrack[] }) {
 
       if (next === current) return;
 
-      const atFirst = current === 0 && delta < 0;
-      const atLast = current === trackCount - 1 && delta > 0;
-      if (atFirst || atLast) return;
+      const leavingDown = current === trackCount - 1 && delta > 0;
+      const leavingUp = current === 0 && delta < 0;
+      if (leavingDown || leavingUp) return;
 
       event.preventDefault();
       snapTo(next);
     }
 
+    function onScroll() {
+      if (snapLock.current) return;
+      const index = getCurrentIndex();
+      if (index !== activeIndexRef.current) {
+        setIndex(index);
+      }
+    }
+
     window.addEventListener("wheel", onWheel, { passive: false });
-    return () => window.removeEventListener("wheel", onWheel);
-  }, [displayTracks.length]);
+    window.addEventListener("scroll", onScroll, { passive: true });
+
+    return () => {
+      cancelSnapAnimation();
+      window.removeEventListener("wheel", onWheel);
+      window.removeEventListener("scroll", onScroll);
+    };
+  }, [displayTracks.length, setIndex]);
 
   const sectionHeight = `${displayTracks.length * TRACK_SCROLL_VH}vh`;
 

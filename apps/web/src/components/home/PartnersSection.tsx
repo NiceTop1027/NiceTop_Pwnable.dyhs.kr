@@ -99,18 +99,28 @@ function PartnerItem({ partner }: { partner: Partner }) {
   return <div className={className}>{content}</div>;
 }
 
-export function PartnersSection() {
-  const track = [...partners, ...partners];
+function PartnerSet({ ariaHidden = false }: { ariaHidden?: boolean }) {
+  return (
+    <div
+      className="partners-marquee-set"
+      aria-hidden={ariaHidden || undefined}
+    >
+      {partners.map((partner) => (
+        <PartnerItem key={partner.name} partner={partner} />
+      ))}
+    </div>
+  );
+}
 
+export function PartnersSection() {
   return (
     <section className="home-section home-section--partners">
       <p className="text-eyebrow mb-10 text-center">협력</p>
 
       <div className="partners-marquee-mask relative overflow-hidden">
-        <div className="partners-marquee-track flex items-center">
-          {track.map((partner, i) => (
-            <PartnerItem key={`${partner.name}-${i}`} partner={partner} />
-          ))}
+        <div className="partners-marquee-track">
+          <PartnerSet />
+          <PartnerSet ariaHidden />
         </div>
       </div>
     </section>
