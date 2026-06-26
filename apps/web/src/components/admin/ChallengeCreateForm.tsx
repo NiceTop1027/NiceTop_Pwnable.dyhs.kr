@@ -59,19 +59,15 @@ export function ChallengeCreateForm() {
 
   return (
     <div className="challenge-create">
-      <Link href="/admin/challenges/guide" className="challenge-guide__back">
+      <Link href="/admin/challenges/guide" className="admin-back-link">
         <ArrowLeft className="h-4 w-4" strokeWidth={1.5} />
         출제 안내
       </Link>
 
-      <header className="challenge-guide__header">
-        <h1 className="challenge-guide__title">새 문제</h1>
-        <p className="challenge-guide__lead">
-          Repository 이름만 정하면 됩니다. 제목과 FLAG는 편집기에서 바꿉니다.
-        </p>
-      </header>
-
-      <AdminCard>
+      <AdminCard
+        title="새 문제"
+        description="Repository 이름만 정하면 됩니다. 제목과 FLAG는 편집기에서 바꿉니다."
+      >
         <form onSubmit={handleSubmit} className="challenge-create__form">
           <AdminInput
             label="문제 이름"

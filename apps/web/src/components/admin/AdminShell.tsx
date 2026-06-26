@@ -9,6 +9,7 @@ import { useAuth } from "@/providers/AuthProvider";
 import { AdminPageHeader } from "./ui/AdminPageHeader";
 
 function isDocumentEditorRoute(pathname: string) {
+  if (pathname.endsWith("/guide")) return false;
   return /^\/admin\/(curriculum|notices|challenges)\/(new|[^/]+)$/.test(pathname);
 }
 

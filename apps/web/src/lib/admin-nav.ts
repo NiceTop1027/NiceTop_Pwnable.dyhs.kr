@@ -69,6 +69,15 @@ export const adminNav: AdminNavItem[] = [
 ];
 
 export function getAdminPageMeta(pathname: string) {
+  if (pathname === "/admin/challenges/guide") {
+    return {
+      href: pathname,
+      label: "출제 안내",
+      icon: Puzzle,
+      description: "Repository 구조와 배포 순서를 확인합니다",
+    };
+  }
+
   const exact = adminNav.find((item) => item.href === pathname);
   if (exact) return exact;
 
