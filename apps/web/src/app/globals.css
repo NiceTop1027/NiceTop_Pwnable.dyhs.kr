@@ -5552,12 +5552,26 @@ a {
   background: var(--bg-muted);
 }
 
+.challenge-deploy-panel.is-collapsed {
+  background: rgba(255, 255, 255, 0.015);
+}
+
+.challenge-deploy-panel.is-collapsed .challenge-deploy-panel__header {
+  margin-bottom: 0;
+}
+
 .challenge-deploy-panel__header {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 1rem;
   margin-bottom: 1rem;
+}
+
+.challenge-deploy-panel__header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .challenge-deploy-panel__eyebrow {
@@ -5654,6 +5668,21 @@ a {
   display: flex;
   flex-wrap: wrap;
   gap: 0.625rem;
+}
+
+.challenge-deploy-panel__files {
+  margin: 0.875rem 0 0;
+  padding: 0.75rem 0.875rem;
+  border-radius: 0.625rem;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: var(--bg);
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.6875rem;
+  color: var(--text-tertiary);
 }
 
 .challenge-deploy-panel__hint,

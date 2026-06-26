@@ -452,6 +452,10 @@ export type ChallengeDockerStatus = {
   containerPort: number;
   files: string[];
   hasContext: boolean;
+  instanceCapable: boolean;
+  archives: string[];
+  lastArchive: string | null;
+  storagePath: string;
 };
 
 export type AdminCurriculumItem = {

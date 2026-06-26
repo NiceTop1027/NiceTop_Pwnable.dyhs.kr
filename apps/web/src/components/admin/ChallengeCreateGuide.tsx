@@ -11,11 +11,11 @@ const STEPS = [
   },
   {
     title: "ZIP 업로드",
-    desc: "편집기 하단 배포 패널에서 Repository ZIP을 올리면 검증 후 빌드됩니다.",
+    desc: "편집기 하단 배포 패널을 열고 Repository ZIP을 올리면 검증 후 빌드됩니다.",
   },
   {
-    title: "접속 확인",
-    desc: "인스턴스 문제는 nc로 직접 풀어본 뒤 공개합니다.",
+    title: "인스턴스 설정",
+    desc: "[vm] ports가 있는 문제만 빌드 완료 후 인스턴스를 직접 켭니다.",
   },
   {
     title: "공개",
@@ -56,7 +56,8 @@ docker_compose = false`;
 const NOTES = [
   "업로드 시 Specfile, Description.md, public/을 검증합니다.",
   "private/는 빌드에만 사용되고 유저에게 노출되지 않습니다.",
-  "[vm] ports가 있으면 빌드 후 인스턴스가 켜지고, 접속 포트는 10000번대에서 자동 배정됩니다.",
+  "ZIP은 data/wargame-repositories/{slug}/archives/에 보관되고, repository/에서 빌드됩니다.",
+  "[vm] ports가 있어도 인스턴스는 빌드 후 직접 켜야 하며, 접속 포트는 10000번대에서 자동 배정됩니다.",
 ];
 
 export function ChallengeCreateGuide() {

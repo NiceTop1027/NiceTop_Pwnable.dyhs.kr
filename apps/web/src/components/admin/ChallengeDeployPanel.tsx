@@ -2,7 +2,15 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Loader2, Package, Power, RefreshCw, Upload } from "lucide-react";
+import {
+  ChevronDown,
+  ChevronUp,
+  Loader2,
+  Package,
+  Power,
+  RefreshCw,
+  Upload,
+} from "lucide-react";
 import { adminApi, type AdminChallenge, type ChallengeDockerStatus } from "@/lib/api";
 import { AdminBadge } from "./ui/AdminBadge";
 
@@ -27,6 +35,7 @@ export function ChallengeDeployPanel({
   const [loading, setLoading] = useState(true);
   const [working, setWorking] = useState(false);
   const [error, setError] = useState("");
+  const [expanded, setExpanded] = useState(false);
 
   const refreshStatus = useCallback(async () => {
     setLoading(true);
@@ -34,6 +43,9 @@ export function ChallengeDeployPanel({
     try {
       const next = await adminApi.getChallengeDockerStatus(challengeId);
       setStatus(next);
+      if (next.hasContext) {
+        setExpanded(true);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "상태를 불러오지 못했습니다.");
     } finally {
@@ -60,6 +72,7 @@ export function ChallengeDeployPanel({
   async function handleUpload(file: File) {
     setWorking(true);
     setError("");
+    setExpanded(true);
     try {
       const next = await adminApi.uploadChallengeDocker(challengeId, file);
       setStatus(next);
@@ -106,6 +119,11 @@ export function ChallengeDeployPanel({
         return;
       }
 
+      if (!next.instanceCapable) {
+        alert("이 Repository는 [vm] ports가 없어 로컬 문제입니다.");
+        return;
+      }
+
       await adminApi.updateChallenge(challengeId, {
         dockerImage: next.imageName,
       });
@@ -120,32 +138,58 @@ export function ChallengeDeployPanel({
   }
 
   const buildReady = status?.buildStatus === "ready";
+  const hasContext = Boolean(status?.hasContext);
+  const instanceCapable = Boolean(status?.instanceCapable);
 
   return (
-    <section className="challenge-deploy-panel">
+    <section className={`challenge-deploy-panel ${expanded ? "is-expanded" : "is-collapsed"}`}>
       <div className="challenge-deploy-panel__header">
         <div>
           <p className="challenge-deploy-panel__eyebrow">
             <Package className="h-4 w-4" aria-hidden />
-            문제 배포
+            배포 · 인스턴스
           </p>
           <p className="challenge-deploy-panel__desc">
-            ZIP 업로드 → 빌드 완료 → 인스턴스 ON. 접속 포트는 유저마다 자동 배정됩니다.{" "}
+            {hasContext
+              ? "업로드된 Repository를 빌드한 뒤, 필요할 때 인스턴스를 켭니다."
+              : "문제를 만든 뒤 Repository ZIP을 업로드하면 배포를 시작할 수 있습니다."}{" "}
             <Link href="/admin/challenges/guide">출제 가이드</Link>
           </p>
         </div>
-        <button
-          type="button"
-          className="challenge-deploy-panel__refresh"
-          onClick={refreshStatus}
-          disabled={loading || working}
-          aria-label="새로고침"
-        >
-          <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
-        </button>
+        <div className="challenge-deploy-panel__header-actions">
+          {hasContext && (
+            <button
+              type="button"
+              className="challenge-deploy-panel__refresh"
+              onClick={refreshStatus}
+              disabled={loading || working}
+              aria-label="새로고침"
+            >
+              <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+            </button>
+          )}
+          <button
+            type="button"
+            className="challenge-deploy-panel__refresh"
+            onClick={() => setExpanded((value) => !value)}
+            aria-expanded={expanded}
+          >
+            {expanded ? (
+              <>
+                <ChevronUp className="h-4 w-4" />
+                접기
+              </>
+            ) : (
+              <>
+                <ChevronDown className="h-4 w-4" />
+                열기
+              </>
+            )}
+          </button>
+        </div>
       </div>
 
-      {loading && !status ? (
+      {!expanded ? null : loading && !status ? (
         <div className="challenge-deploy-panel__loading">
           <Loader2 className="h-4 w-4 animate-spin" />
           상태 확인 중
@@ -169,12 +213,37 @@ export function ChallengeDeployPanel({
             </div>
 
             <div className="challenge-deploy-panel__status-item">
-              <span className="challenge-deploy-panel__label">인스턴스</span>
-              <AdminBadge variant={instanceEnabled ? "success" : "default"}>
-                {instanceEnabled ? "ON · 접속 가능" : "OFF · 로컬 문제"}
+              <span className="challenge-deploy-panel__label">유형</span>
+              <AdminBadge variant={instanceCapable ? "success" : "default"}>
+                {instanceCapable ? "인스턴스 가능" : "로컬"}
               </AdminBadge>
             </div>
+
+            {instanceCapable && (
+              <div className="challenge-deploy-panel__status-item">
+                <span className="challenge-deploy-panel__label">인스턴스</span>
+                <AdminBadge variant={instanceEnabled ? "success" : "default"}>
+                  {instanceEnabled ? "ON" : "OFF"}
+                </AdminBadge>
+              </div>
+            )}
           </div>
+
+          {status?.storagePath && (
+            <div className="challenge-deploy-panel__status-item challenge-deploy-panel__status-item--wide">
+              <span className="challenge-deploy-panel__label">저장 위치</span>
+              <code className="challenge-deploy-panel__code">{status.storagePath}</code>
+            </div>
+          )}
+
+          {status?.lastArchive && (
+            <p className="challenge-deploy-panel__hint">
+              최근 업로드: <code>{status.lastArchive}</code>
+              {status.archives.length > 1
+                ? ` · 보관 ${status.archives.length}개`
+                : ""}
+            </p>
+          )}
 
           {status?.buildError && (
             <p className="challenge-deploy-panel__error">{status.buildError}</p>
@@ -208,36 +277,46 @@ export function ChallengeDeployPanel({
             <button
               type="button"
               className="challenge-deploy-panel__button"
-              disabled={working || !status?.hasContext}
+              disabled={working || !hasContext}
               onClick={() => void handleRebuild()}
             >
               <RefreshCw className="h-4 w-4" />
               다시 빌드
             </button>
-            <button
-              type="button"
-              className={`challenge-deploy-panel__button ${
-                instanceEnabled
-                  ? ""
-                  : "challenge-deploy-panel__button--primary"
-              }`}
-              disabled={
-                working || (instanceEnabled ? false : !buildReady)
-              }
-              onClick={() => void handleInstanceToggle()}
-            >
-              {working ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Power className="h-4 w-4" />
-              )}
-              {instanceEnabled ? "인스턴스 끄기" : "인스턴스 켜기"}
-            </button>
+            {instanceCapable && (
+              <button
+                type="button"
+                className={`challenge-deploy-panel__button ${
+                  instanceEnabled ? "" : "challenge-deploy-panel__button--primary"
+                }`}
+                disabled={working || (instanceEnabled ? false : !buildReady)}
+                onClick={() => void handleInstanceToggle()}
+              >
+                {working ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Power className="h-4 w-4" />
+                )}
+                {instanceEnabled ? "인스턴스 끄기" : "인스턴스 켜기"}
+              </button>
+            )}
           </div>
 
+          {status?.files && status.files.length > 0 && (
+            <ul className="challenge-deploy-panel__files">
+              {status.files.slice(0, 8).map((file) => (
+                <li key={file}>{file}</li>
+              ))}
+              {status.files.length > 8 && (
+                <li>외 {status.files.length - 8}개 파일</li>
+              )}
+            </ul>
+          )}
+
           <p className="challenge-deploy-panel__hint">
-            Specfile · Description.md · public/ 형식의 ZIP을 올리세요. [vm] ports가
-            있으면 빌드 후 인스턴스가 자동으로 켜집니다.
+            ZIP은 <code>data/wargame-repositories/&#123;slug&#125;/archives/</code>에
+            보관되고, 빌드는 <code>repository/</code> 폴더에서 진행됩니다. 인스턴스는
+            빌드 후 직접 켜야 합니다.
           </p>
         </>
       )}

@@ -40,10 +40,13 @@ type ChallengeDockerMeta = {
   builtAt?: string | null;
   containerPort: number;
   files: string[];
-  instanceEnabled?: boolean;
+  instanceCapable?: boolean;
+  lastArchive?: string | null;
 };
 
 const DEFAULT_CONTAINER_PORT = 9999;
+const REPOSITORY_DIR_NAME = 'repository';
+const ARCHIVES_DIR_NAME = 'archives';
 
 const AUTO_DOCKERFILE = `FROM ubuntu:22.04
 
@@ -79,8 +82,8 @@ export class ChallengeDockerService {
     private readonly configService: ConfigService,
   ) {
     this.rootDir = this.configService.get<string>(
-      'CHALLENGE_DOCKER_DIR',
-      join(process.cwd(), 'data', 'challenges'),
+      'CHALLENGE_REPOSITORY_DIR',
+      join(process.cwd(), 'data', 'wargame-repositories'),
     );
     mkdirSync(this.rootDir, { recursive: true });
   }
@@ -89,12 +92,67 @@ export class ChallengeDockerService {
     return `pwnable-${slug.toLowerCase()}:latest`;
   }
 
-  private contextDir(slug: string) {
+  private workspaceDir(slug: string) {
     return join(this.rootDir, slug);
   }
 
+  private repositoryDir(slug: string) {
+    return join(this.workspaceDir(slug), REPOSITORY_DIR_NAME);
+  }
+
+  private archivesDir(slug: string) {
+    return join(this.workspaceDir(slug), ARCHIVES_DIR_NAME);
+  }
+
   private metaPath(slug: string) {
-    return join(this.contextDir(slug), '.meta.json');
+    return join(this.workspaceDir(slug), '.meta.json');
+  }
+
+  private ensureWorkspace(slug: string) {
+    const workspace = this.workspaceDir(slug);
+    const repository = this.repositoryDir(slug);
+    mkdirSync(repository, { recursive: true });
+    mkdirSync(this.archivesDir(slug), { recursive: true });
+    this.migrateLegacyLayout(slug, workspace, repository);
+    return { workspace, repository };
+  }
+
+  private migrateLegacyLayout(
+    slug: string,
+    workspace: string,
+    repository: string,
+  ) {
+    const legacyDirs = [
+      join(process.cwd(), 'data', 'challenges', slug),
+      this.configService.get<string>('CHALLENGE_DOCKER_DIR')
+        ? join(this.configService.get<string>('CHALLENGE_DOCKER_DIR')!, slug)
+        : null,
+    ].filter((dir): dir is string => Boolean(dir && existsSync(dir)));
+
+    if (readdirSync(repository).length > 0) return;
+
+    for (const legacyDir of legacyDirs) {
+      if (!existsSync(legacyDir)) continue;
+
+      for (const entry of readdirSync(legacyDir)) {
+        if (entry === REPOSITORY_DIR_NAME || entry === ARCHIVES_DIR_NAME) {
+          continue;
+        }
+
+        const source = join(legacyDir, entry);
+        const target = join(
+          entry === '.meta.json' ? workspace : repository,
+          entry,
+        );
+
+        if (existsSync(target)) continue;
+        mkdirSync(join(target, '..'), { recursive: true });
+        renameSync(source, target);
+      }
+
+      this.logger.log(`Migrated legacy challenge files for ${slug}`);
+      break;
+    }
   }
 
   private readMeta(slug: string): ChallengeDockerMeta {
@@ -104,18 +162,25 @@ export class ChallengeDockerService {
       builtAt: null,
       containerPort: DEFAULT_CONTAINER_PORT,
       files: [],
+      instanceCapable: false,
+      lastArchive: null,
     };
 
+    this.ensureWorkspace(slug);
     const path = this.metaPath(slug);
     if (!existsSync(path)) return fallback;
 
     try {
-      const parsed = JSON.parse(readFileSync(path, 'utf8')) as Partial<ChallengeDockerMeta>;
+      const parsed = JSON.parse(readFileSync(path, 'utf8')) as Partial<ChallengeDockerMeta> & {
+        instanceEnabled?: boolean;
+      };
       return {
         ...fallback,
         ...parsed,
         containerPort: parsed.containerPort ?? DEFAULT_CONTAINER_PORT,
         files: parsed.files ?? [],
+        instanceCapable:
+          parsed.instanceCapable ?? parsed.instanceEnabled ?? false,
       };
     } catch {
       return fallback;
@@ -123,13 +188,12 @@ export class ChallengeDockerService {
   }
 
   private writeMeta(slug: string, meta: ChallengeDockerMeta) {
-    const dir = this.contextDir(slug);
-    mkdirSync(dir, { recursive: true });
+    this.ensureWorkspace(slug);
     writeFileSync(this.metaPath(slug), JSON.stringify(meta, null, 2));
   }
 
-  private listContextFiles(slug: string): string[] {
-    const dir = this.contextDir(slug);
+  private listRepositoryFiles(slug: string): string[] {
+    const dir = this.repositoryDir(slug);
     if (!existsSync(dir)) return [];
 
     const walk = (base: string, prefix = ''): string[] => {
@@ -137,7 +201,6 @@ export class ChallengeDockerService {
       const files: string[] = [];
 
       for (const entry of entries) {
-        if (entry.name === '.meta.json') continue;
         const rel = prefix ? `${prefix}/${entry.name}` : entry.name;
         const full = join(base, entry.name);
         if (entry.isDirectory()) {
@@ -153,8 +216,29 @@ export class ChallengeDockerService {
     return walk(dir);
   }
 
+  private listArchives(slug: string): string[] {
+    const dir = this.archivesDir(slug);
+    if (!existsSync(dir)) return [];
+    return readdirSync(dir)
+      .filter((name) => name.endsWith('.zip'))
+      .sort()
+      .reverse();
+  }
+
+  private clearRepository(slug: string) {
+    const dir = this.repositoryDir(slug);
+    if (!existsSync(dir)) {
+      mkdirSync(dir, { recursive: true });
+      return;
+    }
+
+    for (const entry of readdirSync(dir)) {
+      rmSync(join(dir, entry), { recursive: true, force: true });
+    }
+  }
+
   private ensureDockerfile(slug: string) {
-    const dir = this.contextDir(slug);
+    const dir = this.repositoryDir(slug);
     const dockerfilePath = join(dir, 'Dockerfile');
     if (existsSync(dockerfilePath)) return;
 
@@ -174,7 +258,7 @@ export class ChallengeDockerService {
   }
 
   private detectContainerPort(slug: string): number {
-    const dockerfilePath = join(this.contextDir(slug), 'Dockerfile');
+    const dockerfilePath = join(this.repositoryDir(slug), 'Dockerfile');
     if (!existsSync(dockerfilePath)) return DEFAULT_CONTAINER_PORT;
 
     const content = readFileSync(dockerfilePath, 'utf8');
@@ -188,7 +272,7 @@ export class ChallengeDockerService {
   }
 
   private async extractZip(slug: string, zipPath: string) {
-    const dir = this.contextDir(slug);
+    const dir = this.repositoryDir(slug);
     mkdirSync(dir, { recursive: true });
 
     await execFileAsync('unzip', ['-oq', zipPath, '-d', dir]);
@@ -223,6 +307,7 @@ export class ChallengeDockerService {
       throw new NotFoundException('Challenge not found');
     }
 
+    this.ensureWorkspace(challenge.slug);
     const meta = this.readMeta(challenge.slug);
     const imageName =
       challenge.dockerImage ?? this.imageNameForSlug(challenge.slug);
@@ -237,14 +322,20 @@ export class ChallengeDockerService {
       buildStatus = 'failed';
     }
 
+    const files = this.listRepositoryFiles(challenge.slug);
+
     return {
       imageName,
       buildStatus,
       buildError: meta.buildError ?? null,
       builtAt: meta.builtAt ?? null,
       containerPort: meta.containerPort,
-      files: this.listContextFiles(challenge.slug),
-      hasContext: existsSync(this.contextDir(challenge.slug)),
+      files,
+      hasContext: files.length > 0,
+      instanceCapable: meta.instanceCapable ?? false,
+      archives: this.listArchives(challenge.slug),
+      lastArchive: meta.lastArchive ?? null,
+      storagePath: `${challenge.slug}/${REPOSITORY_DIR_NAME}`,
     };
   }
 
@@ -267,21 +358,17 @@ export class ChallengeDockerService {
       throw new BadRequestException('ZIP 파일만 업로드할 수 있습니다.');
     }
 
+    this.ensureWorkspace(challenge.slug);
+    const archiveName = `${new Date().toISOString().replace(/[:.]/g, '-')}.zip`;
+    writeFileSync(join(this.archivesDir(challenge.slug), archiveName), file.buffer);
+
     const zipPath = join(
       tmpdir(),
       `challenge-${randomBytes(8).toString('hex')}.zip`,
     );
     writeFileSync(zipPath, file.buffer);
 
-    const dir = this.contextDir(challenge.slug);
-    if (existsSync(dir)) {
-      for (const entry of readdirSync(dir)) {
-        if (entry === '.meta.json') continue;
-        rmSync(join(dir, entry), { recursive: true, force: true });
-      }
-    } else {
-      mkdirSync(dir, { recursive: true });
-    }
+    this.clearRepository(challenge.slug);
 
     try {
       await this.extractZip(challenge.slug, zipPath);
@@ -289,25 +376,27 @@ export class ChallengeDockerService {
       rmSync(zipPath, { force: true });
     }
 
-    const validationErrors = validateRepository(dir);
+    const repository = this.repositoryDir(challenge.slug);
+    const validationErrors = validateRepository(repository);
     if (validationErrors.length > 0) {
       throw new BadRequestException(validationErrors.join(' '));
     }
 
-    const spec = readRepositorySpec(dir);
-    await this.applyRepositoryToChallenge(challenge.id, dir, spec);
+    const spec = readRepositorySpec(repository);
+    await this.applyRepositoryToChallenge(challenge.id, repository, spec);
 
     const containerPort =
       spec?.containerPort ?? this.detectContainerPort(challenge.slug);
-    const instanceEnabled = spec?.vmEnabled ?? false;
+    const instanceCapable = spec?.vmEnabled ?? false;
 
     this.writeMeta(challenge.slug, {
       buildStatus: 'none',
       buildError: null,
       builtAt: null,
       containerPort,
-      instanceEnabled,
-      files: this.listContextFiles(challenge.slug),
+      instanceCapable,
+      lastArchive: archiveName,
+      files: this.listRepositoryFiles(challenge.slug),
     });
 
     return this.buildImage(challenge.id);
@@ -327,8 +416,8 @@ export class ChallengeDockerService {
       throw new BadRequestException('이미 빌드가 진행 중입니다.');
     }
 
-    const dir = this.contextDir(challenge.slug);
-    if (!existsSync(dir) || this.listContextFiles(challenge.slug).length === 0) {
+    const files = this.listRepositoryFiles(challenge.slug);
+    if (files.length === 0) {
       throw new BadRequestException(
         '문제 파일이 없습니다. ZIP을 업로드한 뒤 다시 시도해 주세요.',
       );
@@ -336,23 +425,24 @@ export class ChallengeDockerService {
 
     this.building.add(challenge.id);
     const imageName = this.imageNameForSlug(challenge.slug);
+    const repository = this.repositoryDir(challenge.slug);
 
     this.writeMeta(challenge.slug, {
       ...this.readMeta(challenge.slug),
       buildStatus: 'building',
       buildError: null,
-      files: this.listContextFiles(challenge.slug),
+      files,
     });
 
     try {
       this.ensureDockerfile(challenge.slug);
       const containerPort = this.detectContainerPort(challenge.slug);
 
-      this.logger.log(`Building Docker image ${imageName} from ${dir}`);
+      this.logger.log(`Building Docker image ${imageName} from ${repository}`);
       const stream = await this.docker.buildImage(
         {
-          context: dir,
-          src: readdirSync(dir).filter((name) => name !== '.meta.json'),
+          context: repository,
+          src: readdirSync(repository),
         },
         { t: imageName },
       );
@@ -370,22 +460,15 @@ export class ChallengeDockerService {
       }
 
       const meta = this.readMeta(challenge.slug);
-      const instanceEnabled = meta.instanceEnabled !== false;
-
-      if (instanceEnabled) {
-        await this.prisma.challenge.update({
-          where: { id: challenge.id },
-          data: { dockerImage: imageName },
-        });
-      }
 
       this.writeMeta(challenge.slug, {
         buildStatus: 'ready',
         buildError: null,
         builtAt: new Date().toISOString(),
         containerPort,
-        instanceEnabled,
-        files: this.listContextFiles(challenge.slug),
+        instanceCapable: meta.instanceCapable ?? false,
+        lastArchive: meta.lastArchive ?? null,
+        files: this.listRepositoryFiles(challenge.slug),
       });
 
       this.logger.log(`Docker image ready: ${imageName}`);
@@ -398,7 +481,7 @@ export class ChallengeDockerService {
         ...this.readMeta(challenge.slug),
         buildStatus: 'failed',
         buildError: message,
-        files: this.listContextFiles(challenge.slug),
+        files: this.listRepositoryFiles(challenge.slug),
       });
 
       this.logger.error(`Docker build failed for ${challenge.slug}`, error);
@@ -433,12 +516,14 @@ export class ChallengeDockerService {
   }
 
   listPublicFilesForSlug(slug: string) {
-    return listPublicFiles(this.contextDir(slug));
+    this.ensureWorkspace(slug);
+    return listPublicFiles(this.repositoryDir(slug));
   }
 
   readPublicFileForSlug(slug: string, relativePath: string) {
+    this.ensureWorkspace(slug);
     const target = resolvePublicFilePath(
-      this.contextDir(slug),
+      this.repositoryDir(slug),
       relativePath,
     );
     if (!target) {
