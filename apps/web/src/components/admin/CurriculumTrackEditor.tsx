@@ -9,7 +9,10 @@ import {
   type AdminCurriculum,
   type AdminCurriculumItem,
 } from "@/lib/api";
-import { blocksToMarkdown, parseMarkdownToBlocks } from "@/lib/blocknote-markdown";
+import {
+  parseContentToBlocks,
+  serializeEditorBlocks,
+} from "@/lib/blocknote-markdown";
 import { CURRICULUM_TIER_OPTIONS } from "@/lib/curriculum";
 import {
   DocumentEditorShell,
@@ -56,7 +59,7 @@ export function CurriculumTrackEditor({ trackId }: { trackId: string }) {
         setTitle(data.title);
         setTier(data.tier);
         setOrder(data.order);
-        setBlocks(parseMarkdownToBlocks(data.description ?? ""));
+        setBlocks(parseContentToBlocks(data.description ?? ""));
         setEditorKey((k) => k + 1);
         setIsDirty(false);
       })
@@ -81,7 +84,7 @@ export function CurriculumTrackEditor({ trackId }: { trackId: string }) {
 
     setSaveState("saving");
     try {
-      const description = JSON.stringify(blocks ?? []);
+      const description = serializeEditorBlocks(blocks ?? []);
       const updated = await adminApi.updateCurriculum( trackId, {
         title: title.trim() || "입문",
         tier,

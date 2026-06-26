@@ -9,7 +9,10 @@ import {
   type SaveState,
 } from "@/components/admin/DocumentEditorShell";
 import { api, ApiError } from "@/lib/api";
-import { parseMarkdownToBlocks } from "@/lib/blocknote-markdown";
+import {
+  parseContentToBlocks,
+  serializeEditorBlocks,
+} from "@/lib/blocknote-markdown";
 import { useAuth  } from "@/providers/AuthProvider";
 
 type PostEditorProps = {
@@ -33,7 +36,7 @@ export function PostEditor({
   const { user } = useAuth();
   const [title, setTitle] = useState(initialTitle);
   const [blocks, setBlocks] = useState<PartialBlock[] | null>(() =>
-    parseMarkdownToBlocks(initialContent),
+    parseContentToBlocks(initialContent),
   );
   const [editorKey, setEditorKey] = useState(0);
   const [saveState, setSaveState] = useState<SaveState>("idle");
@@ -43,7 +46,7 @@ export function PostEditor({
   useEffect(() => {
     if (mode === "edit") {
       setTitle(initialTitle);
-      setBlocks(parseMarkdownToBlocks(initialContent));
+      setBlocks(parseContentToBlocks(initialContent));
       setEditorKey((k) => k + 1);
       setIsDirty(false);
     }
@@ -52,7 +55,7 @@ export function PostEditor({
   const save = useCallback(async () => {
     setError("");
     const trimmedTitle = title.trim() || "제목 없음";
-    const content = JSON.stringify(blocks ?? []);
+    const content = serializeEditorBlocks(blocks ?? []);
 
     if (!blocks || (Array.isArray(blocks) && blocks.length === 0)) {
       setError("본문을 입력해 주세요.");

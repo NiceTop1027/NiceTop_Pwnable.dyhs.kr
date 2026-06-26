@@ -630,6 +630,16 @@ a {
   padding-bottom: 0;
 }
 
+.curriculum-snap-section {
+  position: relative;
+}
+
+.curriculum-snap-panel {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
 .home-section--partners {
   padding-top: 4rem;
   padding-bottom: 4rem;

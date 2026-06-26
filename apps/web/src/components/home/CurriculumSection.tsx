@@ -1,9 +1,11 @@
 "use client";
 
-import { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   motion,
+  useMotionValueEvent,
   useScroll,
+  useSpring,
   useTransform,
   type MotionValue,
 } from "framer-motion";
@@ -11,43 +13,31 @@ import { Button } from "@/components/ui/Button";
 import { resolveHomeCurriculumTracks, type CurriculumTrack } from "@/lib/curriculum";
 import { useHydrated } from "@/lib/use-hydrated";
 
+const TRACK_SCROLL_VH = 100;
+
 function TrackSlide({
   track,
   index,
-  total,
-  scrollYProgress,
+  activeIndex,
 }: {
   track: CurriculumTrack;
   index: number;
-  total: number;
-  scrollYProgress: MotionValue<number>;
+  activeIndex: number;
 }) {
-  const hydrated = useHydrated();
-  const segment = 1 / total;
-  const start = index * segment;
-  const enter = start + segment * 0.15;
-  const hold = start + segment * 0.55;
-  const exit = start + segment * 0.85;
-  const fadeEnd = Math.min(start + segment, 1);
-
-  const opacity = useTransform(
-    scrollYProgress,
-    [start, enter, hold, exit, fadeEnd],
-    [0, 1, 1, 1, 0],
-  );
-  const y = useTransform(scrollYProgress, [start, enter, exit], [80, 0, -40]);
-  const scale = useTransform(scrollYProgress, [start, enter, exit], [0.94, 1, 0.97]);
-  const blur = useTransform(
-    scrollYProgress,
-    [start, enter, exit, fadeEnd],
-    [12, 0, 0, 10],
-  );
-  const filter = useTransform(blur, (v) => `blur(${v}px)`);
+  const isActive = index === activeIndex;
 
   return (
     <motion.div
-      style={hydrated ? { opacity, y, scale, filter } : undefined}
+      initial={false}
+      animate={{
+        opacity: isActive ? 1 : 0,
+        y: isActive ? 0 : 24,
+        scale: isActive ? 1 : 0.97,
+        filter: isActive ? "blur(0px)" : "blur(8px)",
+      }}
+      transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
       className="absolute inset-0 flex flex-col justify-center"
+      aria-hidden={!isActive}
     >
       <p className="text-eyebrow mb-4">{track.name}</p>
       <h3 className="text-[clamp(2rem,4vw,3rem)] font-semibold tracking-tight text-[var(--text)]">
@@ -75,68 +65,134 @@ function TrackSlide({
 
 function ProgressDots({
   total,
-  scrollYProgress,
+  activeIndex,
 }: {
   total: number;
-  scrollYProgress: MotionValue<number>;
+  activeIndex: number;
 }) {
   return (
     <div className="absolute right-0 top-1/2 flex -translate-y-1/2 flex-col gap-3">
       {Array.from({ length: total }).map((_, i) => (
-        <ProgressDot key={i} index={i} total={total} scrollYProgress={scrollYProgress} />
+        <motion.div
+          key={i}
+          animate={{
+            width: i === activeIndex ? 20 : 6,
+            opacity: i === activeIndex ? 1 : 0.25,
+          }}
+          transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+          className="h-1.5 rounded-full bg-[var(--text)]"
+        />
       ))}
     </div>
   );
 }
 
-function ProgressDot({
-  index,
-  total,
-  scrollYProgress,
-}: {
-  index: number;
-  total: number;
-  scrollYProgress: MotionValue<number>;
-}) {
-  const hydrated = useHydrated();
-  const segment = 1 / total;
-  const center = index * segment + segment * 0.4;
-  const width = useTransform(
-    scrollYProgress,
-    [center - segment * 0.3, center, center + segment * 0.3],
-    [6, 20, 6],
-  );
-  const opacity = useTransform(
-    scrollYProgress,
-    [center - segment * 0.3, center, center + segment * 0.3],
-    [0.25, 1, 0.25],
-  );
-
-  return (
-    <motion.div
-      style={hydrated ? { width, opacity } : undefined}
-      className="h-1.5 rounded-full bg-[var(--text)]"
-    />
-  );
-}
-
 export function CurriculumSection({ tracks }: { tracks: CurriculumTrack[] }) {
   const ref = useRef<HTMLDivElement>(null);
+  const snapLock = useRef(false);
+  const hydrated = useHydrated();
+  const displayTracks = resolveHomeCurriculumTracks(tracks);
+  const [activeIndex, setActiveIndex] = useState(0);
+
   const { scrollYProgress } = useScroll({
     target: ref,
     offset: ["start start", "end end"],
   });
 
-  const displayTracks = resolveHomeCurriculumTracks(tracks);
+  const smoothProgress = useSpring(scrollYProgress, {
+    stiffness: 280,
+    damping: 36,
+    mass: 0.25,
+  });
 
-  const sectionHeight = `${Math.max(360, displayTracks.length * 200)}vh`;
+  const progressIndex = useTransform(smoothProgress, (value) =>
+    Math.min(
+      displayTracks.length - 1,
+      Math.max(0, Math.round(value * Math.max(displayTracks.length - 1, 1))),
+    ),
+  );
+
+  useMotionValueEvent(progressIndex, "change", (value) => {
+    setActiveIndex(value);
+  });
+
+  useEffect(() => {
+    const section = ref.current;
+    if (!section || displayTracks.length <= 1) return;
+
+    const trackCount = displayTracks.length;
+
+    function getTrackHeight() {
+      return (window.innerHeight * TRACK_SCROLL_VH) / 100;
+    }
+
+    function getCurrentIndex() {
+      const sectionTop = section!.offsetTop;
+      const relative = window.scrollY - sectionTop;
+      const trackHeight = getTrackHeight();
+      return Math.min(
+        trackCount - 1,
+        Math.max(0, Math.round(relative / trackHeight)),
+      );
+    }
+
+    function snapTo(index: number) {
+      const sectionTop = section!.offsetTop;
+      const trackHeight = getTrackHeight();
+      snapLock.current = true;
+      window.scrollTo({
+        top: sectionTop + index * trackHeight,
+        behavior: "smooth",
+      });
+      window.setTimeout(() => {
+        snapLock.current = false;
+      }, 520);
+    }
+
+    function onWheel(event: WheelEvent) {
+      if (snapLock.current) {
+        event.preventDefault();
+        return;
+      }
+
+      const rect = section!.getBoundingClientRect();
+      const inSection = rect.top <= 0 && rect.bottom >= window.innerHeight * 0.5;
+      if (!inSection) return;
+
+      const delta = event.deltaY;
+      if (Math.abs(delta) < 4) return;
+
+      const current = getCurrentIndex();
+      const next =
+        delta > 0
+          ? Math.min(trackCount - 1, current + 1)
+          : Math.max(0, current - 1);
+
+      if (next === current) return;
+
+      const atFirst = current === 0 && delta < 0;
+      const atLast = current === trackCount - 1 && delta > 0;
+      if (atFirst || atLast) return;
+
+      event.preventDefault();
+      snapTo(next);
+    }
+
+    window.addEventListener("wheel", onWheel, { passive: false });
+    return () => window.removeEventListener("wheel", onWheel);
+  }, [displayTracks.length]);
+
+  const sectionHeight = `${displayTracks.length * TRACK_SCROLL_VH}vh`;
 
   return (
-    <section ref={ref} className="home-section home-section--curriculum relative" style={{ height: sectionHeight }}>
-      <div className="sticky top-0 h-[100svh] overflow-hidden">
+    <section
+      ref={ref}
+      className="home-section home-section--curriculum curriculum-snap-section relative"
+      style={{ height: sectionHeight }}
+    >
+      <div className="curriculum-snap-panel sticky top-0 h-[100svh] overflow-hidden">
         <div className="home-section-inner flex h-full items-center">
           <div className="grid w-full items-center gap-12 lg:grid-cols-2 lg:gap-20">
-            {/* Left — 고정 */}
             <div className="lg:pr-8">
               <p className="text-eyebrow mb-4">커리큘럼</p>
               <h2 className="text-headline-sm">
@@ -154,18 +210,17 @@ export function CurriculumSection({ tracks }: { tracks: CurriculumTrack[] }) {
               </div>
             </div>
 
-            {/* Right — 스크롤마다 트랙 전환 */}
             <div className="curriculum-stage relative h-[420px] lg:h-[480px]">
-              {displayTracks.map((track, i) => (
-                <TrackSlide
-                  key={track.slug}
-                  track={track}
-                  index={i}
-                  total={displayTracks.length}
-                  scrollYProgress={scrollYProgress}
-                />
-              ))}
-              <ProgressDots total={displayTracks.length} scrollYProgress={scrollYProgress} />
+              {hydrated &&
+                displayTracks.map((track, i) => (
+                  <TrackSlide
+                    key={track.slug}
+                    track={track}
+                    index={i}
+                    activeIndex={activeIndex}
+                  />
+                ))}
+              <ProgressDots total={displayTracks.length} activeIndex={activeIndex} />
             </div>
           </div>
         </div>

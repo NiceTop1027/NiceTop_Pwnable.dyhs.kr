@@ -4,7 +4,10 @@ import type { PartialBlock } from "@blocknote/core";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { adminApi, type AdminNotice } from "@/lib/api";
-import { blocksToMarkdown, parseMarkdownToBlocks } from "@/lib/blocknote-markdown";
+import {
+  parseContentToBlocks,
+  serializeEditorBlocks,
+} from "@/lib/blocknote-markdown";
 import {
   DocumentEditorShell,
   type SaveState,
@@ -29,7 +32,7 @@ export function NoticeEditor({ noticeId }: { noticeId: string }) {
         setNotice(data);
         setTitle(data.title);
         setIsPinned(data.isPinned);
-        setBlocks(parseMarkdownToBlocks(data.content));
+        setBlocks(parseContentToBlocks(data.content));
         setEditorKey((k) => k + 1);
         setIsDirty(false);
       })
@@ -42,7 +45,7 @@ export function NoticeEditor({ noticeId }: { noticeId: string }) {
 
     setSaveState("saving");
     try {
-      const content = JSON.stringify(blocks ?? []);
+      const content = serializeEditorBlocks(blocks ?? []);
       const updated = await adminApi.updateNotice( noticeId, {
         title: title.trim() || "제목 없음",
         content,

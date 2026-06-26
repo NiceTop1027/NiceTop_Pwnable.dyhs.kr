@@ -4,7 +4,10 @@ import type { PartialBlock } from "@blocknote/core";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { adminApi, api, ApiError, type AdminLecture } from "@/lib/api";
-import { parseMarkdownToBlocks } from "@/lib/blocknote-markdown";
+import {
+  parseContentToBlocks,
+  serializeEditorBlocks,
+} from "@/lib/blocknote-markdown";
 import {
   DocumentEditorShell,
   type SaveState,
@@ -27,7 +30,7 @@ function createPageDraft(order: number): PageDraft {
     id,
     title: `페이지 ${order + 1}`,
     slug: "",
-    blocks: parseMarkdownToBlocks(""),
+    blocks: parseContentToBlocks(""),
     order,
   };
 }
@@ -37,7 +40,7 @@ function toPageDrafts(lecture: AdminLecture): PageDraft[] {
     id: page.id,
     title: page.title,
     slug: page.slug,
-    blocks: parseMarkdownToBlocks(page.content),
+    blocks: parseContentToBlocks(page.content),
     order: page.order,
   }));
 }
@@ -140,7 +143,7 @@ export function LectureEditor({ lectureId }: { lectureId: string }) {
           id: page.id.startsWith("new-") ? undefined : page.id,
           title: page.title.trim() || `페이지 ${index + 1}`,
           slug: page.slug || undefined,
-          content: JSON.stringify(page.blocks ?? []),
+          content: serializeEditorBlocks(page.blocks ?? []),
           order: index,
         })),
       });

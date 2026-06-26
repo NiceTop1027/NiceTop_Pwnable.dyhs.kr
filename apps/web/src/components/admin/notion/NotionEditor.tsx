@@ -11,6 +11,7 @@ import {
 import { useCallback } from "react";
 import { adminApi } from "@/lib/api";
 import { blockNoteDictionary } from "@/lib/blocknote-dictionary";
+import { normalizeEditorBlocks } from "@/lib/blocknote-markdown";
 import { documentBlockNoteSchema } from "@/lib/blocknote-schema";
 import { resolveMediaUrl } from "@/lib/media";
 import { DocumentFormattingToolbar } from "./DocumentFormattingToolbar";
@@ -31,7 +32,7 @@ export function NotionEditor({
 }: NotionEditorProps) {
   const blocks =
     Array.isArray(initialContent) && initialContent.length > 0
-      ? initialContent
+      ? normalizeEditorBlocks(initialContent)
       : defaultBlocks;
 
   const uploadFile = useCallback(async (file: File) => {
@@ -45,7 +46,7 @@ export function NotionEditor({
       props: {
         name: file.name,
         url,
-        showPreview: true,
+        showPreview: false,
       },
     };
   }, []);

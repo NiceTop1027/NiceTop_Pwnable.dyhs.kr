@@ -4,7 +4,10 @@ import type { PartialBlock } from "@blocknote/core";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { adminApi, type AdminChallenge } from "@/lib/api";
-import { blocksToMarkdown, parseMarkdownToBlocks } from "@/lib/blocknote-markdown";
+import {
+  parseContentToBlocks,
+  serializeEditorBlocks,
+} from "@/lib/blocknote-markdown";
 import {
   DocumentEditorShell,
   type SaveState,
@@ -40,7 +43,7 @@ export function ChallengeEditor({ challengeId }: { challengeId: string }) {
         setDifficulty(data.difficulty);
         setPoints(data.points);
         setIsPublished(data.isPublished);
-        setBlocks(parseMarkdownToBlocks(data.description));
+        setBlocks(parseContentToBlocks(data.description));
         setEditorKey((k) => k + 1);
         setIsDirty(false);
       })
@@ -53,7 +56,7 @@ export function ChallengeEditor({ challengeId }: { challengeId: string }) {
 
     setSaveState("saving");
     try {
-      const description = JSON.stringify(blocks ?? []);
+      const description = serializeEditorBlocks(blocks ?? []);
       const updated = await adminApi.updateChallenge( challengeId, {
         title: title.trim() || "제목 없음",
         description,
@@ -139,7 +142,7 @@ export function ChallengeEditor({ challengeId }: { challengeId: string }) {
             setDifficulty(data.difficulty);
             setPoints(data.points);
             setIsPublished(data.isPublished);
-            setBlocks(parseMarkdownToBlocks(data.description));
+            setBlocks(parseContentToBlocks(data.description));
             setEditorKey((k) => k + 1);
           }}
         />
