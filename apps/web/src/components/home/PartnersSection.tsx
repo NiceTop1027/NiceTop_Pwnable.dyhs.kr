@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useEffect, useRef, useState } from "react";
 
 type Partner = {
   name: string;
@@ -39,6 +40,8 @@ const partners: Partner[] = [
     href: "https://fluxwear.co.kr",
   },
 ];
+
+const MARQUEE_SPEED_PX = 52;
 
 function PartnerItem({ partner }: { partner: Partner }) {
   const content = (
@@ -101,10 +104,7 @@ function PartnerItem({ partner }: { partner: Partner }) {
 
 function PartnerSet({ ariaHidden = false }: { ariaHidden?: boolean }) {
   return (
-    <div
-      className="partners-marquee-set"
-      aria-hidden={ariaHidden || undefined}
-    >
+    <div className="partners-marquee-set" aria-hidden={ariaHidden || undefined}>
       {partners.map((partner) => (
         <PartnerItem key={partner.name} partner={partner} />
       ))}
@@ -113,14 +113,110 @@ function PartnerSet({ ariaHidden = false }: { ariaHidden?: boolean }) {
 }
 
 export function PartnersSection() {
+  const maskRef = useRef<HTMLDivElement>(null);
+  const trackRef = useRef<HTMLDivElement>(null);
+  const offsetRef = useRef(0);
+  const shiftRef = useRef(0);
+  const pausedRef = useRef(false);
+  const lastTimeRef = useRef(0);
+  const frameRef = useRef<number | null>(null);
+  const [setCount, setSetCount] = useState(3);
+
+  useEffect(() => {
+    const mask = maskRef.current;
+    const track = trackRef.current;
+    if (!mask || !track) return;
+
+    const tick = (time: number) => {
+      const trackEl = trackRef.current;
+      const shift = shiftRef.current;
+
+      if (trackEl && shift > 0 && !pausedRef.current) {
+        const last = lastTimeRef.current || time;
+        const delta = time - last;
+        lastTimeRef.current = time;
+
+        offsetRef.current += (MARQUEE_SPEED_PX * delta) / 1000;
+        while (offsetRef.current >= shift) {
+          offsetRef.current -= shift;
+        }
+
+        trackEl.style.transform = `translate3d(${-offsetRef.current}px, 0, 0)`;
+      } else {
+        lastTimeRef.current = time;
+      }
+
+      frameRef.current = requestAnimationFrame(tick);
+    };
+
+    const onEnter = () => {
+      pausedRef.current = true;
+    };
+    const onLeave = () => {
+      pausedRef.current = false;
+      lastTimeRef.current = 0;
+    };
+
+    mask.addEventListener("mouseenter", onEnter);
+    mask.addEventListener("mouseleave", onLeave);
+    frameRef.current = requestAnimationFrame(tick);
+
+    return () => {
+      mask.removeEventListener("mouseenter", onEnter);
+      mask.removeEventListener("mouseleave", onLeave);
+      if (frameRef.current !== null) {
+        cancelAnimationFrame(frameRef.current);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    const mask = maskRef.current;
+    const track = trackRef.current;
+    if (!mask || !track) return;
+
+    const measure = () => {
+      const sets = track.querySelectorAll<HTMLElement>(".partners-marquee-set");
+      if (sets.length < 2) return;
+
+      const shift = sets[1].offsetLeft - sets[0].offsetLeft;
+      if (shift <= 0) return;
+
+      shiftRef.current = shift;
+      offsetRef.current %= shift;
+
+      const containerWidth = mask.clientWidth;
+      const needed = Math.max(3, Math.ceil((containerWidth + shift * 2) / shift) + 1);
+      setSetCount((current) => (current === needed ? current : needed));
+    };
+
+    measure();
+
+    const observer = new ResizeObserver(measure);
+    observer.observe(mask);
+    observer.observe(track);
+
+    track.querySelectorAll("img").forEach((img) => {
+      if (!img.complete) {
+        img.addEventListener("load", measure, { once: true });
+      }
+    });
+
+    return () => observer.disconnect();
+  }, [setCount]);
+
   return (
     <section className="home-section home-section--partners">
       <p className="text-eyebrow mb-10 text-center">협력</p>
 
-      <div className="partners-marquee-mask relative overflow-hidden">
-        <div className="partners-marquee-track">
-          <PartnerSet />
-          <PartnerSet ariaHidden />
+      <div
+        ref={maskRef}
+        className="partners-marquee-mask relative overflow-hidden"
+      >
+        <div ref={trackRef} className="partners-marquee-track">
+          {Array.from({ length: setCount }, (_, index) => (
+            <PartnerSet key={index} ariaHidden={index > 0} />
+          ))}
         </div>
       </div>
     </section>
