@@ -50,9 +50,11 @@ export function UsersAdminPanel() {
           불러오는 중
         </div>
       ) : users.length > 0 ? (
-        users.map((u) => (
+        <div className="admin-list">
+        {users.map((u, index) => (
           <AdminRow
             key={u.id}
+            index={index}
             title={u.displayName ?? u.username}
             meta={`@${u.username} · ${u.score.toLocaleString("ko-KR")} XP · ${u._count.solves} solved`}
             badge={
@@ -83,7 +85,8 @@ export function UsersAdminPanel() {
               </>
             }
           />
-        ))
+        ))}
+        </div>
       ) : (
         <AdminEmpty message="등록된 회원이 없습니다" />
       )}

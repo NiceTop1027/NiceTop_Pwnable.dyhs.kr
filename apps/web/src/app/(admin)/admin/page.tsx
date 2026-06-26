@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { adminApi } from "@/lib/api";
-import { AdminCard } from "@/components/admin/ui/AdminCard";
 import { AdminEmpty } from "@/components/admin/ui/AdminEmpty";
 
 type AdminStats = {
@@ -62,20 +61,27 @@ export default function AdminDashboardPage() {
     );
   }
 
+  if (items.length === 0) {
+    return <AdminEmpty message="통계를 불러올 수 없습니다" />;
+  }
+
   return (
-    <AdminCard title="플랫폼 현황" description="실시간 집계 데이터입니다">
-      {items.length > 0 ? (
-        <div className="admin-stat-grid">
-          {items.map((item) => (
-            <div key={item.label} className="admin-stat-card">
-              <p className="admin-stat-label">{item.label}</p>
-              <p className="admin-stat-value">{formatStat(item.value)}</p>
-            </div>
-          ))}
-        </div>
-      ) : (
-        <AdminEmpty message="통계를 불러올 수 없습니다" />
-      )}
-    </AdminCard>
+    <section className="admin-section">
+      <header className="admin-section-header">
+        <h2 className="admin-section-title">플랫폼 현황</h2>
+        <p className="admin-section-description">실시간 집계 데이터입니다</p>
+      </header>
+      <div className="admin-metrics-board">
+        {items.map((item, index) => (
+          <div key={item.label} className="admin-metric-cell">
+            <span className="admin-metric-index">
+              {String(index + 1).padStart(2, "0")}
+            </span>
+            <p className="admin-metric-label">{item.label}</p>
+            <p className="admin-metric-value">{formatStat(item.value)}</p>
+          </div>
+        ))}
+      </div>
+    </section>
   );
 }

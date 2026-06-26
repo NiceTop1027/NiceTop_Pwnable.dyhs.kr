@@ -60,10 +60,12 @@ export function CurriculumTrackAdminPanel() {
           불러오는 중
         </div>
       ) : tracks.length > 0 ? (
-        tracks.map((track, index) => (
+        <div className="admin-list">
+        {tracks.map((track, index) => (
           <AdminRow
             key={track.id}
-            title={`${String(index + 1).padStart(2, "0")} ${track.tier} · ${track.title} 트랙`}
+            index={index}
+            title={`${track.tier} · ${track.title} 트랙`}
             meta={`${track.items.length}개 단계 · slug: ${track.slug}`}
             badge={
               <AdminBadge variant="default">
@@ -84,7 +86,8 @@ export function CurriculumTrackAdminPanel() {
               </>
             }
           />
-        ))
+        ))}
+        </div>
       ) : (
         <AdminEmpty message="등록된 트랙이 없습니다" />
       )}

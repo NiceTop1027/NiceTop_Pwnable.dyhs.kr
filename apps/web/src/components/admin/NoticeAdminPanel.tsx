@@ -55,9 +55,11 @@ export function NoticeAdminPanel() {
           불러오는 중
         </div>
       ) : items.length > 0 ? (
-        items.map((n) => (
+        <div className="admin-list">
+        {items.map((n, index) => (
           <AdminRow
             key={n.id}
+            index={index}
             title={n.title}
             meta={new Date(n.publishedAt).toLocaleString("ko-KR")}
             badge={
@@ -74,7 +76,8 @@ export function NoticeAdminPanel() {
               </>
             }
           />
-        ))
+        ))}
+        </div>
       ) : (
         <AdminEmpty message="등록된 공지가 없습니다" />
       )}

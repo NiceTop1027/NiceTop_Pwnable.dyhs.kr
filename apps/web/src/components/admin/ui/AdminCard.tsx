@@ -12,16 +12,16 @@ export function AdminCard({
   className?: string;
 }) {
   return (
-    <section className={`admin-card ${className}`}>
+    <section className={`admin-section ${className}`}>
       {(title || description) && (
-        <div className="admin-card-header">
-          {title && <h3 className="admin-card-title">{title}</h3>}
+        <header className="admin-section-header">
+          {title && <h2 className="admin-section-title">{title}</h2>}
           {description && (
-            <p className="admin-card-description">{description}</p>
+            <p className="admin-section-description">{description}</p>
           )}
-        </div>
+        </header>
       )}
-      <div className="admin-card-body">{children}</div>
+      <div className="admin-section-body">{children}</div>
     </section>
   );
 }

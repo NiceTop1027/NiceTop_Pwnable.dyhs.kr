@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
+import { ArrowUpRight } from "lucide-react";
+import { FadeIn } from "@/components/pages/FadeIn";
 import { adminNav, getAdminPageMeta } from "@/lib/admin-nav";
 import { SITE_NAME } from "@/lib/site";
 import { useAuth } from "@/providers/AuthProvider";
@@ -25,6 +27,8 @@ export function AdminShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="admin-root">
+      <div className="admin-ambient" aria-hidden />
+
       <nav className="admin-mobile-nav" aria-label="관리자 메뉴">
         {adminNav.map((item) => {
           const active =
@@ -48,10 +52,16 @@ export function AdminShell({ children }: { children: ReactNode }) {
 
       <div className="admin-shell">
         <aside className="admin-sidebar">
-          <Link href="/" className="admin-sidebar-brand">
-            {SITE_NAME}
-          </Link>
-          <p className="admin-sidebar-eyebrow">관리 콘솔</p>
+          <div className="admin-sidebar-top">
+            <Link href="/" className="admin-sidebar-brand">
+              {SITE_NAME}
+            </Link>
+            <Link href="/" className="admin-sidebar-site-link">
+              사이트 보기
+              <ArrowUpRight className="h-3.5 w-3.5" strokeWidth={1.5} />
+            </Link>
+          </div>
+
           <nav className="admin-sidebar-nav" aria-label="관리자 메뉴">
             {adminNav.map((item) => {
               const active =
@@ -72,6 +82,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
               );
             })}
           </nav>
+
           <div className="admin-sidebar-footer">
             <p className="admin-sidebar-user">
               {user?.displayName ?? user?.username}
@@ -87,8 +98,10 @@ export function AdminShell({ children }: { children: ReactNode }) {
         </aside>
 
         <div className="admin-main">
-          <AdminPageHeader title={meta.label} description={meta.description} />
-          {children}
+          <div className="admin-content">
+            <AdminPageHeader title={meta.label} description={meta.description} />
+            <FadeIn delay={0.06}>{children}</FadeIn>
+          </div>
         </div>
       </div>
     </div>

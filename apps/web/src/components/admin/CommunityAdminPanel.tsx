@@ -48,9 +48,11 @@ export function CommunityAdminPanel() {
           불러오는 중
         </div>
       ) : posts.length > 0 ? (
-        posts.map((post) => (
+        <div className="admin-list">
+        {posts.map((post, index) => (
           <AdminRow
             key={post.id}
+            index={index}
             title={post.title}
             meta={`${post.board.name} · ${authorName(post.author)} · ${formatBoardDate(post.createdAt)} · 댓글 ${post._count.comments}`}
             badge={
@@ -79,7 +81,8 @@ export function CommunityAdminPanel() {
               </>
             }
           />
-        ))
+        ))}
+        </div>
       ) : (
         <AdminEmpty message="등록된 글이 없습니다" />
       )}

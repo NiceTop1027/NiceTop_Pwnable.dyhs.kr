@@ -101,9 +101,11 @@ export function ChallengeCreateGuide() {
       </AdminCard>
 
       <AdminCard title="파일">
-        {FILES.map((file) => (
+        <div className="admin-list">
+        {FILES.map((file, index) => (
           <AdminRow
             key={file.name}
+            index={index}
             title={<span className="admin-code-inline">{file.name}</span>}
             meta={file.desc}
             badge={
@@ -113,6 +115,7 @@ export function ChallengeCreateGuide() {
             }
           />
         ))}
+        </div>
       </AdminCard>
 
       <AdminCard

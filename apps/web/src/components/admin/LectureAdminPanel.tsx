@@ -68,11 +68,13 @@ export function LectureAdminPanel() {
           불러오는 중
         </div>
       ) : lectures.length > 0 ? (
-        lectures.map((l) => {
+        <div className="admin-list">
+        {lectures.map((l, index) => {
           const published = l.versions[0]?.isPublished ?? false;
           return (
             <AdminRow
               key={l.id}
+              index={index}
               title={l.title}
               meta={
                 l.updatedAt
@@ -99,7 +101,8 @@ export function LectureAdminPanel() {
               }
             />
           );
-        })
+        })}
+        </div>
       ) : (
         <AdminEmpty message="등록된 문서가 없습니다" />
       )}

@@ -5,6 +5,7 @@ import { SITE_NAME } from "@/lib/site";
 interface PageHeaderProps {
   title: string;
   description?: string;
+  eyebrow?: string;
   icon?: LucideIcon;
   children?: React.ReactNode;
 }
@@ -12,11 +13,12 @@ interface PageHeaderProps {
 export default function PageHeader({
   title,
   description,
+  eyebrow = SITE_NAME,
   children,
 }: PageHeaderProps) {
   return (
     <div className="mb-12">
-      <p className="text-eyebrow mb-3">{SITE_NAME}</p>
+      <p className="text-eyebrow mb-3">{eyebrow}</p>
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h1 className="text-headline-sm">{title}</h1>

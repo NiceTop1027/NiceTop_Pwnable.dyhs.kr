@@ -86,9 +86,11 @@ export function ChallengeAdminPanel() {
           불러오는 중
         </div>
       ) : items.length > 0 ? (
-        items.map((item) => (
+        <div className="admin-list">
+        {items.map((item, index) => (
           <AdminRow
             key={item.id}
+            index={index}
             title={item.title}
             meta={`${item.slug} · ${item.category} · ${item.difficulty} · ${calcChallengeXp(item.points, item.difficulty).toLocaleString()} XP · ${item._count.solves} solved`}
             badge={
@@ -120,7 +122,8 @@ export function ChallengeAdminPanel() {
               </>
             }
           />
-        ))
+        ))}
+        </div>
       ) : (
         <AdminEmpty message="등록된 문제가 없습니다" />
       )}
