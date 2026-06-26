@@ -9,6 +9,7 @@ import {
   DocumentEditorShell,
   type SaveState,
 } from "./DocumentEditorShell";
+import { ChallengeDeployPanel } from "./ChallengeDeployPanel";
 
 const categories = ["PWN", "REV", "WEB", "CRYPTO", "FORENSIC", "MISC", "OSINT"];
 const difficulties = ["EASY", "MEDIUM", "HARD", "INSANE"];
@@ -21,7 +22,6 @@ export function ChallengeEditor({ challengeId }: { challengeId: string }) {
   const [difficulty, setDifficulty] = useState("EASY");
   const [points, setPoints] = useState(100);
   const [flag, setFlag] = useState("");
-  const [dockerImage, setDockerImage] = useState("");
   const [isPublished, setIsPublished] = useState(false);
   const [blocks, setBlocks] = useState<PartialBlock[] | null>(null);
   const [loading, setLoading] = useState(true);
@@ -39,7 +39,6 @@ export function ChallengeEditor({ challengeId }: { challengeId: string }) {
         setCategory(data.category);
         setDifficulty(data.difficulty);
         setPoints(data.points);
-        setDockerImage(data.dockerImage ?? "");
         setIsPublished(data.isPublished);
         setBlocks(parseMarkdownToBlocks(data.description));
         setEditorKey((k) => k + 1);
@@ -54,14 +53,13 @@ export function ChallengeEditor({ challengeId }: { challengeId: string }) {
 
     setSaveState("saving");
     try {
-      const description = blocksToMarkdown(blocks ?? []);
+      const description = JSON.stringify(blocks ?? []);
       const updated = await adminApi.updateChallenge( challengeId, {
         title: title.trim() || "제목 없음",
         description,
         category,
         difficulty,
         points,
-        dockerImage: dockerImage.trim() || undefined,
         isPublished,
         ...(flag.trim() ? { flag: flag.trim() } : {}),
       });
@@ -79,7 +77,6 @@ export function ChallengeEditor({ challengeId }: { challengeId: string }) {
     challenge,
     challengeId,
     difficulty,
-    dockerImage,
     flag,
     isPublished,
     points,
@@ -98,8 +95,12 @@ export function ChallengeEditor({ challengeId }: { challengeId: string }) {
   }, [isDirty, save]);
 
   async function handleDelete() {
+    if (isPublished) {
+      alert("공개된 문제는 삭제할 수 없습니다.");
+      return;
+    }
     if (!confirm("이 문제를 삭제할까요?")) return;
-    await adminApi.deleteChallenge( challengeId);
+    await adminApi.deleteChallenge(challengeId);
     router.push("/admin/challenges");
   }
 
@@ -120,13 +121,29 @@ export function ChallengeEditor({ challengeId }: { challengeId: string }) {
       saveState={saveState}
       isDirty={isDirty}
       onSave={save}
-      onDelete={handleDelete}
+      onDelete={isPublished ? undefined : handleDelete}
       previewHref={
         isPublished && challenge ? `/wargame/${challenge.slug}` : undefined
       }
       loading={loading}
       notFound={!loading && !challenge}
       emptyMessage="문제를 찾을 수 없습니다"
+      footer={
+        <ChallengeDeployPanel
+          challengeId={challengeId}
+          instanceEnabled={Boolean(challenge?.dockerImage)}
+          onChallengeUpdated={(data) => {
+            setChallenge(data);
+            setTitle(data.title);
+            setCategory(data.category);
+            setDifficulty(data.difficulty);
+            setPoints(data.points);
+            setIsPublished(data.isPublished);
+            setBlocks(parseMarkdownToBlocks(data.description));
+            setEditorKey((k) => k + 1);
+          }}
+        />
+      }
       toolbar={
         <>
           <select
@@ -184,18 +201,6 @@ export function ChallengeEditor({ challengeId }: { challengeId: string }) {
             placeholder="FLAG 변경 시만 입력"
             className="notion-toolbar-select notion-toolbar-input notion-toolbar-input-wide"
             aria-label="FLAG"
-          />
-
-          <input
-            type="text"
-            value={dockerImage}
-            onChange={(e) => {
-              setDockerImage(e.target.value);
-              setIsDirty(true);
-            }}
-            placeholder="Docker 이미지"
-            className="notion-toolbar-select notion-toolbar-input notion-toolbar-input-wide"
-            aria-label="Docker 이미지"
           />
 
           <label className="notion-toolbar-check">

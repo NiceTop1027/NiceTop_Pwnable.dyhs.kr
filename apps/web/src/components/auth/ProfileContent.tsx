@@ -19,6 +19,10 @@ import { PasswordStrength } from "@/components/auth/PasswordStrength";
 import { ProfileAvatar } from "@/components/auth/ProfileAvatar";
 import { isStaffRole } from "@/lib/roles";
 import { LearningProgressList } from "@/components/lectures/LearningProgressList";
+import {
+  confirmUnsavedLeave,
+  useUnsavedChangesWarning,
+} from "@/lib/use-unsaved-changes-warning";
 
 type Tab = "overview" | "profile" | "security";
 
@@ -61,7 +65,10 @@ export function ProfileContent() {
 
   useEffect(() => {
     if (!user) return setStats(null);
-    api.me().then((me) => setStats(me._count)).catch(() => setStats(null));
+    api
+      .me()
+      .then((me) => setStats(me?._count ?? null))
+      .catch(() => setStats(null));
   }, [user]);
 
   useEffect(() => {
@@ -81,6 +88,30 @@ export function ProfileContent() {
       profile.bio.trim() !== (user.bio ?? "")
     );
   }, [profile, user]);
+
+  const securityDirty = useMemo(
+    () =>
+      passwords.currentPassword !== "" ||
+      passwords.newPassword !== "" ||
+      passwords.confirmPassword !== "",
+    [passwords],
+  );
+
+  const hasUnsavedChanges =
+    (tab === "profile" && profileDirty) || (tab === "security" && securityDirty);
+
+  useUnsavedChangesWarning(hasUnsavedChanges);
+
+  function switchTab(next: Tab) {
+    if (next === tab) return;
+    if (hasUnsavedChanges && !confirmUnsavedLeave()) return;
+    setTab(next);
+  }
+
+  async function handleLogout() {
+    if (hasUnsavedChanges && !confirmUnsavedLeave()) return;
+    await logout();
+  }
 
   if (isLoading) {
     return (
@@ -204,7 +235,7 @@ export function ProfileContent() {
               관리
             </Link>
           )}
-          <button type="button" className="profile-hero-link" onClick={() => logout()}>
+          <button type="button" className="profile-hero-link" onClick={() => void handleLogout()}>
             <LogOut className="h-3.5 w-3.5" strokeWidth={1.5} />
             로그아웃
           </button>
@@ -217,7 +248,7 @@ export function ProfileContent() {
             key={t.id}
             type="button"
             className={`auth-tab ${tab === t.id ? "auth-tab-active" : ""}`}
-            onClick={() => setTab(t.id)}
+            onClick={() => switchTab(t.id)}
             aria-current={tab === t.id ? "page" : undefined}
           >
             {t.label}
@@ -254,7 +285,7 @@ export function ProfileContent() {
                 <p className="profile-bio-text">{user.bio}</p>
               </div>
             )}
-            <Button variant="outline" onClick={() => setTab("profile")}>
+            <Button variant="outline" onClick={() => switchTab("profile")}>
               프로필 수정
             </Button>
           </section>

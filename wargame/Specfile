@@ -1,0 +1,14 @@
+[wargame]
+
+title = FNotes
+flag = DH{real_flag}
+tags = pwnable
+
+[vm]
+
+os = linux
+memory = 128
+disk = 256
+ports = 8080/tcp
+allow_outgoing = false
+docker_compose = false

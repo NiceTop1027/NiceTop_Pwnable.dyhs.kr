@@ -9,10 +9,7 @@ import {
   type SaveState,
 } from "@/components/admin/DocumentEditorShell";
 import { api, ApiError } from "@/lib/api";
-import {
-  blocksToMarkdown,
-  parseMarkdownToBlocks,
-} from "@/lib/blocknote-markdown";
+import { parseMarkdownToBlocks } from "@/lib/blocknote-markdown";
 import { useAuth  } from "@/providers/AuthProvider";
 
 type PostEditorProps = {
@@ -55,9 +52,9 @@ export function PostEditor({
   const save = useCallback(async () => {
     setError("");
     const trimmedTitle = title.trim() || "제목 없음";
-    const content = blocksToMarkdown(blocks ?? []).trim();
+    const content = JSON.stringify(blocks ?? []);
 
-    if (!content) {
+    if (!blocks || (Array.isArray(blocks) && blocks.length === 0)) {
       setError("본문을 입력해 주세요.");
       setSaveState("error");
       return;

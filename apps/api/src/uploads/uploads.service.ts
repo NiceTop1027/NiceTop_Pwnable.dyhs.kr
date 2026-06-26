@@ -1,7 +1,8 @@
 import { Injectable, NotFoundException, StreamableFile } from '@nestjs/common';
 import { createReadStream, existsSync } from 'fs';
-import { join } from 'path';
+import { extname, join } from 'path';
 import { detectImageType, mimeForImageType } from '../common/utils/image-bytes';
+import { PrismaService } from '../prisma/prisma.service';
 
 const UPLOAD_ROOT = join(process.cwd(), 'uploads');
 const ALLOWED_CATEGORIES = new Set(['avatars', 'content']);
@@ -9,6 +10,8 @@ const SAFE_FILENAME = /^[a-zA-Z0-9._-]+$/;
 
 @Injectable()
 export class UploadsService {
+  constructor(private readonly prisma: PrismaService) {}
+
   resolveFile(category: string, filename: string) {
     if (!ALLOWED_CATEGORIES.has(category)) {
       throw new NotFoundException('File not found');
@@ -41,11 +44,61 @@ export class UploadsService {
     });
 
     const detected = detectImageType(bytes);
-    const mime = detected ? mimeForImageType(detected) : 'application/octet-stream';
+    const mime = detected
+      ? mimeForImageType(detected)
+      : this.getMimeForExtension(filename);
+
+    let effectiveFilename = filename;
+    if (category === 'content') {
+      const attachment = await this.prisma.challengeAttachment.findFirst({
+        where: { storageKey: filename },
+        select: { filename: true },
+      });
+      if (attachment) {
+        effectiveFilename = attachment.filename;
+      }
+    }
+
+    const disposition =
+      category === 'avatars'
+        ? `inline; filename="${effectiveFilename}"`
+        : `attachment; filename="${effectiveFilename}"`;
 
     return new StreamableFile(createReadStream(filepath), {
       type: mime,
-      disposition: `inline; filename="${filename}"`,
+      disposition,
     });
+  }
+
+  private getMimeForExtension(filename: string) {
+    const extension = extname(filename).toLowerCase();
+    switch (extension) {
+      case '.pdf':
+        return 'application/pdf';
+      case '.txt':
+        return 'text/plain';
+      case '.md':
+        return 'text/markdown';
+      case '.json':
+        return 'application/json';
+      case '.csv':
+        return 'text/csv';
+      case '.zip':
+        return 'application/zip';
+      case '.doc':
+        return 'application/msword';
+      case '.docx':
+        return 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+      case '.ppt':
+        return 'application/vnd.ms-powerpoint';
+      case '.pptx':
+        return 'application/vnd.openxmlformats-officedocument.presentationml.presentation';
+      case '.xls':
+        return 'application/vnd.ms-excel';
+      case '.xlsx':
+        return 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+      default:
+        return 'application/octet-stream';
+    }
   }
 }

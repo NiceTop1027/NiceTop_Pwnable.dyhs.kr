@@ -9,12 +9,16 @@ import { ChallengeCategory, Difficulty } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { hashFlag } from '../common/utils/hash';
 import { calcChallengeXp } from '../common/utils/challenge-xp';
+import { ChallengeDockerService } from './challenge-docker.service';
 
 const submitBuckets = new Map<string, { count: number; resetAt: number }>();
 
 @Injectable()
 export class ChallengesService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly challengeDockerService: ChallengeDockerService,
+  ) {}
 
   private withXpReward<T extends { points: number; difficulty: Difficulty }>(
     challenge: T,
@@ -79,10 +83,35 @@ export class ChallengesService {
     }
 
     const { solves, ...rest } = challenge;
+    const publicFiles = this.challengeDockerService
+      .listPublicFilesForSlug(challenge.slug)
+      .map((file) => ({
+        path: file.path,
+        size: file.size,
+        url: `/api/challenges/${slug}/files/download?path=${encodeURIComponent(file.path)}`,
+      }));
+
     return {
       ...this.withXpReward(rest),
       solved: solves?.length ? solves[0] : null,
+      publicFiles,
     };
+  }
+
+  async getPublicFile(slug: string, relativePath: string) {
+    const challenge = await this.prisma.challenge.findUnique({
+      where: { slug },
+      select: { isPublished: true, slug: true },
+    });
+
+    if (!challenge?.isPublished) {
+      throw new NotFoundException('Challenge not found');
+    }
+
+    return this.challengeDockerService.readPublicFileForSlug(
+      challenge.slug,
+      relativePath,
+    );
   }
 
   private checkSubmitRateLimit(userId: string, challengeId: string) {

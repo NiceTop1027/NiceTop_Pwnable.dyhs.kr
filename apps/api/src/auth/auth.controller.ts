@@ -9,7 +9,6 @@ import {
   Post,
   Req,
   Res,
-  UnauthorizedException,
   UploadedFile,
   UseGuards,
   UseInterceptors,
@@ -26,7 +25,10 @@ import { LogoutDto } from './dto/logout.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
-import { REFRESH_TOKEN_COOKIE } from '../common/constants/auth-cookies';
+import {
+  ACCESS_TOKEN_COOKIE,
+  REFRESH_TOKEN_COOKIE,
+} from '../common/constants/auth-cookies';
 import {
   clearAuthCookies,
   setAuthCookies,
@@ -81,6 +83,30 @@ export class AuthController {
   }
 
   @Public()
+  @Get('session')
+  async session(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
+    const result = await this.authService.resolveSession(
+      req.cookies?.[ACCESS_TOKEN_COOKIE],
+      req.cookies?.[REFRESH_TOKEN_COOKIE],
+    );
+
+    if (result.clearCookies) {
+      clearAuthCookies(res, this.configService);
+    }
+
+    if (result.accessToken && result.refreshToken) {
+      setAuthCookies(
+        res,
+        this.configService,
+        result.accessToken,
+        result.refreshToken,
+      );
+    }
+
+    return { user: result.user ?? null };
+  }
+
+  @Public()
   @RateLimit(30, 60_000)
   @UseGuards(RateLimitGuard)
   @Post('refresh')
@@ -92,17 +118,23 @@ export class AuthController {
     const refreshToken =
       dto.refreshToken ?? req.cookies?.[REFRESH_TOKEN_COOKIE];
     if (!refreshToken) {
-      throw new UnauthorizedException('Invalid refresh token');
+      clearAuthCookies(res, this.configService);
+      return { user: null };
     }
 
-    const result = await this.authService.refresh(refreshToken);
-    setAuthCookies(
-      res,
-      this.configService,
-      result.accessToken,
-      result.refreshToken,
-    );
-    return { user: result.user };
+    try {
+      const result = await this.authService.refresh(refreshToken);
+      setAuthCookies(
+        res,
+        this.configService,
+        result.accessToken,
+        result.refreshToken,
+      );
+      return { user: result.user };
+    } catch {
+      clearAuthCookies(res, this.configService);
+      return { user: null };
+    }
   }
 
   @Public()
@@ -121,10 +153,28 @@ export class AuthController {
     return { success: true };
   }
 
-  @UseGuards(JwtAuthGuard)
+  @Public()
   @Get('me')
-  me(@CurrentUser() user: { id: string }) {
-    return this.authService.me(user.id);
+  async me(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
+    const result = await this.authService.resolveSession(
+      req.cookies?.[ACCESS_TOKEN_COOKIE],
+      req.cookies?.[REFRESH_TOKEN_COOKIE],
+    );
+
+    if (result.clearCookies) {
+      clearAuthCookies(res, this.configService);
+    }
+
+    if (result.accessToken && result.refreshToken) {
+      setAuthCookies(
+        res,
+        this.configService,
+        result.accessToken,
+        result.refreshToken,
+      );
+    }
+
+    return result.user ?? null;
   }
 
   @UseGuards(JwtAuthGuard)

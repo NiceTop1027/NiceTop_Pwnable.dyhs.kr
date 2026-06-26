@@ -35,8 +35,12 @@ export function NotionEditor({
       : defaultBlocks;
 
   const uploadFile = useCallback(async (file: File) => {
+    const maxSize = 5 * 1024 * 1024;
+    if (file.size > maxSize) {
+      throw new Error('Files must be 5MB or smaller.');
+    }
 
-    const { url } = await adminApi.uploadContentImage( file);
+    const { url } = await adminApi.uploadContentImage(file);
     return {
       props: {
         name: file.name,

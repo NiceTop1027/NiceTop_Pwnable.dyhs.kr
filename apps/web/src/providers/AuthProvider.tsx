@@ -38,26 +38,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const loadUser = useCallback(async () => {
     try {
-      const me = await api.me();
-      setUser(me);
-      return;
-    } catch (err) {
-      if (err instanceof ApiError && err.message === "Account suspended") {
-        sessionStorage.setItem(SUSPENDED_FLAG_KEY, "1");
-      }
-    }
-
-    try {
-      const res = await api.refresh();
+      const res = await api.session();
       setUser(res.user);
-      return;
-    } catch (err) {
-      if (err instanceof ApiError && err.message === "Account suspended") {
-        sessionStorage.setItem(SUSPENDED_FLAG_KEY, "1");
-      }
+    } catch {
+      setUser(null);
     }
-
-    setUser(null);
   }, []);
 
   useEffect(() => {
@@ -95,6 +80,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const refreshUser = useCallback(async () => {
     try {
       const me = await api.me();
+      if (!me) {
+        setUser(null);
+        return;
+      }
       setUser(me);
     } catch (err) {
       if (err instanceof ApiError && err.message === "Account suspended") {

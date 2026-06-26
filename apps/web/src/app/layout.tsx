@@ -22,6 +22,10 @@ export const metadata: Metadata = {
   },
   description: SITE_DESCRIPTION,
   keywords: ["NiceTop", "pwnable", "CTF", "해킹", "보안", "교육", "워게임", "포너블"],
+  icons: {
+    icon: [{ url: "/favicon.svg", type: "image/svg+xml" }],
+    shortcut: "/favicon.svg",
+  },
 };
 
 export default function RootLayout({
@@ -30,7 +34,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ko" className={pretendard.variable} data-scroll-behavior="smooth">
+    <html lang="ko" className={pretendard.variable} data-scroll-behavior="auto">
       <body className="flex min-h-screen flex-col font-sans antialiased">
         <AuthProvider>
           <Header />

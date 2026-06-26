@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { api } from "@/lib/api";
+import { ChallengePublicFiles } from "@/components/challenges/ChallengePublicFiles";
 import { ChallengeSolver } from "@/components/wargame/ChallengeSolver";
 import { DocArticle } from "@/components/content/DocArticle";
 import { FadeIn } from "@/components/pages/FadeIn";
@@ -53,12 +54,9 @@ export default async function ChallengePage({ params }: Props) {
         content={challenge.description}
       />
 
-      {challenge.dockerImage && (
-        <FadeIn delay={0.12} className="doc-page mt-8">
-          <p className="text-caption">Docker</p>
-          <code className="mt-2 block rounded-xl bg-[var(--bg-muted)] p-4 font-mono text-sm">
-            {challenge.dockerImage}
-          </code>
+      {challenge.publicFiles && challenge.publicFiles.length > 0 && (
+        <FadeIn delay={0.12} className="doc-page mt-8 max-w-lg">
+          <ChallengePublicFiles files={challenge.publicFiles} />
         </FadeIn>
       )}
 

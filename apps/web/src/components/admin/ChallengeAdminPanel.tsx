@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { adminApi } from "@/lib/api";
 import { calcChallengeXp } from "@/lib/challenge-xp";
-import { useAuth  } from "@/providers/AuthProvider";
+import { useAuth } from "@/providers/AuthProvider";
 import { AdminBadge } from "./ui/AdminBadge";
 import { AdminButton } from "./ui/AdminButton";
 import { AdminCard } from "./ui/AdminCard";
@@ -19,6 +19,7 @@ type ChallengeRow = {
   difficulty: string;
   points: number;
   isPublished: boolean;
+  dockerImage: string | null;
   _count: { solves: number };
 };
 
@@ -47,23 +48,33 @@ export function ChallengeAdminPanel() {
   }, [authLoading, user]);
 
   async function togglePublish(item: ChallengeRow) {
-    await adminApi.updateChallenge( item.id, {
+    await adminApi.updateChallenge(item.id, {
       isPublished: !item.isPublished,
     });
     await load();
   }
 
-  async function remove(id: string) {
+  async function remove(item: ChallengeRow) {
+    if (item.isPublished) {
+      alert("공개된 문제는 삭제할 수 없습니다.");
+      return;
+    }
     if (!confirm("이 문제를 삭제할까요?")) return;
-    await adminApi.deleteChallenge( id);
+    await adminApi.deleteChallenge(item.id);
     await load();
   }
 
   return (
-    <AdminCard title="워게임 문제" description="Notion 스타일 에디터로 문제 설명을 작성합니다">
-      <div className="admin-form-actions" style={{ marginTop: 0, marginBottom: "1.25rem" }}>
-        <Link href="/admin/challenges/new" className="admin-btn admin-btn-primary">
+    <AdminCard
+      title="워게임 문제"
+      description="문제 생성 후 편집기에서 설명 작성 · ZIP 배포를 진행합니다"
+    >
+      <div className="admin-form-actions challenge-admin-toolbar">
+        <Link href="/admin/challenges/guide" className="admin-btn admin-btn-primary">
           새 문제
+        </Link>
+        <Link href="/admin/challenges/guide" className="admin-btn admin-btn-ghost">
+          출제 안내
         </Link>
       </div>
 
@@ -79,11 +90,16 @@ export function ChallengeAdminPanel() {
           <AdminRow
             key={item.id}
             title={item.title}
-            meta={`${item.category} · ${item.difficulty} · ${calcChallengeXp(item.points, item.difficulty).toLocaleString()} XP · ${item._count.solves} solved`}
+            meta={`${item.slug} · ${item.category} · ${item.difficulty} · ${calcChallengeXp(item.points, item.difficulty).toLocaleString()} XP · ${item._count.solves} solved`}
             badge={
-              <AdminBadge variant={item.isPublished ? "success" : "warning"}>
-                {item.isPublished ? "공개" : "비공개"}
-              </AdminBadge>
+              <>
+                <AdminBadge variant={item.dockerImage ? "success" : "default"}>
+                  {item.dockerImage ? "인스턴스" : "로컬"}
+                </AdminBadge>
+                <AdminBadge variant={item.isPublished ? "success" : "warning"}>
+                  {item.isPublished ? "공개" : "비공개"}
+                </AdminBadge>
+              </>
             }
             actions={
               <>
@@ -96,9 +112,11 @@ export function ChallengeAdminPanel() {
                 <AdminButton variant="ghost" onClick={() => togglePublish(item)}>
                   {item.isPublished ? "비공개" : "공개"}
                 </AdminButton>
-                <AdminButton variant="danger" onClick={() => remove(item.id)}>
-                  삭제
-                </AdminButton>
+                {!item.isPublished && (
+                  <AdminButton variant="danger" onClick={() => remove(item)}>
+                    삭제
+                  </AdminButton>
+                )}
               </>
             }
           />

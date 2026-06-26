@@ -3,8 +3,22 @@
 import type { PartialBlock } from "@blocknote/core";
 import { ArrowLeft, Check, ExternalLink, Loader2, Trash2 } from "lucide-react";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import type { ReactNode } from "react";
-import { NotionEditor } from "./notion/NotionEditor";
+import { useUnsavedChangesWarning } from "@/lib/use-unsaved-changes-warning";
+
+const NotionEditor = dynamic(
+  () => import("./notion/NotionEditor").then((mod) => mod.NotionEditor),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="notion-loading">
+        <span className="admin-spinner" />
+        에디터 불러오는 중
+      </div>
+    ),
+  },
+);
 
 export type SaveState = "idle" | "saving" | "saved" | "error";
 
@@ -93,6 +107,8 @@ export function DocumentEditorShell({
   footer,
   showBackLink = true,
 }: DocumentEditorShellProps) {
+  useUnsavedChangesWarning(isDirty && !loading && !notFound);
+
   if (loading) {
     return (
       <div className="notion-page">

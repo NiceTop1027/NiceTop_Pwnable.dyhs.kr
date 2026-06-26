@@ -1,10 +1,7 @@
-import { buildApiUrl } from "./api";
+import { buildApiUrl, resolveServerApiUrl } from "./api";
 import { isSafeMediaUrl } from "./safe-url";
 
-const SERVER_API_URL =
-  process.env.API_URL ??
-  process.env.NEXT_PUBLIC_API_URL ??
-  "http://localhost:4001";
+const SERVER_API_URL = resolveServerApiUrl();
 
 /** 문서·에디터용 업로드 URL을 브라우저에서 불러올 수 있는 절대 경로로 변환 */
 export function resolveMediaUrl(url: string | null | undefined): string | null {

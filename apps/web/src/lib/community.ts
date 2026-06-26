@@ -1,3 +1,5 @@
+import { contentToPlainText } from "./content-text";
+
 export const boardHints: Record<string, string> = {
   free: "자유롭게 이야기하고 정보를 나눠 보세요.",
   qna: "궁금한 점을 질문하고 서로 답변해 보세요.",
@@ -25,7 +27,8 @@ export function formatBoardDate(iso: string) {
 }
 
 export function excerptContent(content: string, max = 120) {
-  const text = content.replace(/\s+/g, " ").trim();
+  const text = contentToPlainText(content);
+  if (!text) return "";
   if (text.length <= max) return text;
   return `${text.slice(0, max)}…`;
 }

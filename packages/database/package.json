@@ -6,9 +6,10 @@
   "types": "./src/index.ts",
   "scripts": {
     "generate": "prisma generate",
-    "migrate": "prisma migrate dev",
-    "seed": "tsx prisma/seed.ts",
-    "studio": "prisma studio"
+    "migrate": "sh -c 'set -a; . ../../.env; set +a; prisma migrate dev \"$@\"' --",
+    "push": "sh -c 'set -a; . ../../.env; set +a; prisma db push \"$@\"' --",
+    "seed": "sh -c 'set -a; . ../../.env; set +a; tsx prisma/seed.ts' --",
+    "studio": "sh -c 'set -a; . ../../.env; set +a; prisma studio \"$@\"' --"
   },
   "dependencies": {
     "@prisma/client": "^6.8.2"

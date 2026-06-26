@@ -253,6 +253,68 @@ export class AuthService {
   }
 
   async me(userId: string) {
+    const user = await this.getUserProfile(userId);
+    if (!user) {
+      throw new UnauthorizedException();
+    }
+    return user;
+  }
+
+  async resolveSession(
+    accessToken?: string,
+    refreshToken?: string,
+  ): Promise<{
+    user: Awaited<ReturnType<AuthService['getUserProfile']>>;
+    accessToken?: string;
+    refreshToken?: string;
+    clearCookies?: boolean;
+  }> {
+    if (accessToken) {
+      try {
+        const payload = await this.jwtService.verifyAsync<{ sub: string }>(
+          accessToken,
+        );
+        const user = await this.getUserProfile(payload.sub);
+        if (user) {
+          return { user };
+        }
+      } catch {
+        // Fall through to refresh token.
+      }
+    }
+
+    if (refreshToken) {
+      try {
+        const refreshed = await this.refresh(refreshToken);
+        return {
+          user: await this.getUserProfile(refreshed.user.id),
+          accessToken: refreshed.accessToken,
+          refreshToken: refreshed.refreshToken,
+        };
+      } catch {
+        return { user: null, clearCookies: true };
+      }
+    }
+
+    return { user: null, clearCookies: !!accessToken };
+  }
+
+  private async getUserProfile(userId: string): Promise<{
+    id: string;
+    username: string;
+    email: string | null;
+    displayName: string | null;
+    role: string;
+    score: number;
+    bio: string | null;
+    avatarUrl: string | null;
+    createdAt: Date;
+    _count: {
+      solves: number;
+      achievements: number;
+      lectureProgress: number;
+    };
+  } | null> {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
       select: {
@@ -267,12 +329,8 @@ export class AuthService {
       },
     });
 
-    if (!user) {
-      throw new UnauthorizedException();
-    }
-
-    if (!(await this.isUserActive(userId))) {
-      throw new UnauthorizedException('Account suspended');
+    if (!user || !(await this.isUserActive(userId))) {
+      return null;
     }
 
     return user;

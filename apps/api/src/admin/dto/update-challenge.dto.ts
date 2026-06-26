@@ -40,7 +40,7 @@ export class UpdateChallengeDto {
 
   @IsOptional()
   @IsString()
-  dockerImage?: string;
+  dockerImage?: string | null;
 
   @IsOptional()
   @IsBoolean()

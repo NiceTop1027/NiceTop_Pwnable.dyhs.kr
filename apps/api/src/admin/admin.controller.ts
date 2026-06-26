@@ -2,11 +2,8 @@ import {
   Body,
   Controller,
   Delete,
-  FileTypeValidator,
   Get,
-  MaxFileSizeValidator,
   Param,
-  ParseFilePipe,
   Patch,
   Post,
   UploadedFile,
@@ -31,6 +28,7 @@ import { ReorderCurriculumItemsDto } from './dto/reorder-curriculum-items.dto';
 import { UpdateCommunityPostDto } from './dto/update-community-post.dto';
 import { ContactService } from '../contact/contact.service';
 import { UpdateInquiryStatusDto } from '../contact/dto/update-inquiry-status.dto';
+import { ChallengeDockerService } from '../challenges/challenge-docker.service';
 
 @AdminRoles()
 @Controller('admin')
@@ -39,6 +37,7 @@ export class AdminController {
     private readonly adminService: AdminService,
     private readonly adminLogService: AdminLogService,
     private readonly contactService: ContactService,
+    private readonly challengeDockerService: ChallengeDockerService,
   ) {}
 
   @Get('stats')
@@ -151,6 +150,29 @@ export class AdminController {
     @Param('id') id: string,
   ) {
     return this.adminService.deleteChallenge(admin.id, id);
+  }
+
+  @Get('challenges/:id/docker')
+  getChallengeDockerStatus(@Param('id') id: string) {
+    return this.challengeDockerService.getStatus(id);
+  }
+
+  @Post('challenges/:id/docker/upload')
+  @UseInterceptors(
+    FileInterceptor('archive', {
+      limits: { fileSize: 50 * 1024 * 1024 },
+    }),
+  )
+  uploadChallengeDocker(
+    @Param('id') id: string,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    return this.challengeDockerService.uploadArchive(id, file);
+  }
+
+  @Post('challenges/:id/docker/build')
+  rebuildChallengeDocker(@Param('id') id: string) {
+    return this.challengeDockerService.buildImage(id);
   }
 
   @Get('curricula')
@@ -278,17 +300,14 @@ export class AdminController {
   }
 
   @Post('uploads/content')
-  @UseInterceptors(FileInterceptor('file'))
+  @UseInterceptors(
+    FileInterceptor('file', {
+      limits: { fileSize: 5 * 1024 * 1024 },
+    }),
+  )
   uploadContentImage(
     @CurrentUser() admin: { id: string },
-    @UploadedFile(
-      new ParseFilePipe({
-        validators: [
-          new MaxFileSizeValidator({ maxSize: 5 * 1024 * 1024 }),
-          new FileTypeValidator({ fileType: /^image\/(jpeg|png|webp|gif)$/ }),
-        ],
-      }),
-    )
+    @UploadedFile()
     file: Express.Multer.File,
   ) {
     return this.adminService.uploadContentImage(admin.id, file);

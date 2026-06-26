@@ -1,7 +1,20 @@
-const SERVER_API_URL =
-  process.env.API_URL ??
-  process.env.NEXT_PUBLIC_API_URL ??
-  "http://localhost:4001";
+export function resolveServerApiUrl() {
+  if (process.env.INTERNAL_API_URL) return process.env.INTERNAL_API_URL;
+  if (
+    process.env.API_URL &&
+    process.env.WEB_URL &&
+    process.env.API_URL === process.env.WEB_URL &&
+    process.env.API_PORT
+  ) {
+    return `http://localhost:${process.env.API_PORT}`;
+  }
+  return process.env.API_URL ?? process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4001";
+}
+/**
+ * API 통신을 위한 중앙 클라이언트 모듈
+ */
+
+const SERVER_API_URL = resolveServerApiUrl();
 
 function getApiOrigin(): string {
   if (typeof window !== "undefined") return "";
@@ -25,7 +38,13 @@ async function refreshSession(): Promise<boolean> {
     body: JSON.stringify({}),
     cache: "no-store",
   })
-    .then((res) => res.ok)
+    .then(async (res) => {
+      if (!res.ok) return false;
+      const data = (await res.json().catch(() => null)) as {
+        user?: unknown;
+      } | null;
+      return !!data?.user;
+    })
     .finally(() => {
       refreshInFlight = null;
     });
@@ -132,6 +151,13 @@ export async function apiUpload<T>(
   return parseResponse<T>(res);
 }
 
+export type InstanceInfo = {
+  id: string;
+  host: string;
+  port: number;
+  expiresAt: string;
+};
+
 export type AuthUser = {
   id: string;
   username: string;
@@ -159,8 +185,15 @@ export type RankingEntry = {
   _count: { solves: number };
 };
 
+export type ChallengePublicFile = {
+  path: string;
+  size: number;
+  url: string;
+};
+
 export type ChallengeDetail = Challenge & {
   solved: { id: string; solvedAt: string; isFirstBlood: boolean } | null;
+  publicFiles?: ChallengePublicFile[];
 };
 
 export type LecturePageSummary = {
@@ -236,7 +269,9 @@ export type Challenge = {
   points: number;
   xpReward: number;
   dockerImage: string | null;
+  createdAt: string;
   _count: { solves: number };
+  solves?: number;
 };
 
 export type Board = {
@@ -252,7 +287,7 @@ export type BoardAuthor = {
   username: string;
   displayName: string | null;
   avatarUrl: string | null;
-};
+}
 
 export type PublicUserProfile = {
   id: string;
@@ -409,6 +444,16 @@ export type AdminChallenge = {
   updatedAt: string;
 };
 
+export type ChallengeDockerStatus = {
+  imageName: string;
+  buildStatus: "none" | "building" | "ready" | "failed";
+  buildError: string | null;
+  builtAt: string | null;
+  containerPort: number;
+  files: string[];
+  hasContext: boolean;
+};
+
 export type AdminCurriculumItem = {
   id: string;
   order: number;
@@ -447,10 +492,22 @@ export const api = {
       body: JSON.stringify(data),
     }),
 
+  session: () =>
+    apiFetch<{
+      user:
+        | (AuthUser & {
+            _count: { solves: number; achievements: number; lectureProgress: number };
+          })
+        | null;
+    }>("/auth/session", { skipAuthRetry: true }),
+
   me: () =>
-    apiFetch<AuthUser & { _count: { solves: number; achievements: number; lectureProgress: number } }>(
-      "/auth/me", {},
-    ),
+    apiFetch<
+      | (AuthUser & {
+          _count: { solves: number; achievements: number; lectureProgress: number };
+        })
+      | null
+    >("/auth/me", { skipAuthRetry: true }),
 
   updateProfile: (data: { displayName?: string; email?: string; bio?: string },
   ) =>
@@ -619,6 +676,16 @@ export const api = {
       { method: "POST", body: JSON.stringify({ flag }) },
     ),
 
+  startChallengeInstance: (challengeId: string) =>
+    apiFetch<InstanceInfo>(`/challenges/${challengeId}/instance/start`, {
+      method: "POST",
+    }),
+
+  stopChallengeInstance: (challengeId: string, instanceId: string) =>
+    apiFetch<void>(`/challenges/${challengeId}/instance/${instanceId}`, {
+      method: "DELETE",
+    }),
+
   notice: (id: string) => apiFetch<Notice>(`/notices/${id}`),
 
   notificationsRecent: () =>
@@ -719,6 +786,7 @@ export const adminApi = {
 
   createChallenge: (data: {
       title: string;
+      slug?: string;
       description: string;
       category: string;
       difficulty?: string;
@@ -736,7 +804,19 @@ export const adminApi = {
   getChallenge: (id: string) =>
     apiFetch<AdminChallenge>(`/admin/challenges/${id}`, {}),
 
-  updateChallenge: (id: string, data: Record<string, unknown>) =>
+  updateChallenge: (
+    id: string,
+    data: {
+      title?: string;
+      description?: string;
+      category?: string;
+      difficulty?: string;
+      points?: number;
+      flag?: string;
+      dockerImage?: string | null;
+      isPublished?: boolean;
+    },
+  ) =>
     apiFetch<AdminChallenge>(`/admin/challenges/${id}`, {
       method: "PATCH",
       body: JSON.stringify(data),
@@ -744,6 +824,21 @@ export const adminApi = {
 
   deleteChallenge: (id: string) =>
     apiFetch(`/admin/challenges/${id}`, { method: "DELETE" }),
+
+  getChallengeDockerStatus: (id: string) =>
+    apiFetch<ChallengeDockerStatus>(`/admin/challenges/${id}/docker`, {}),
+
+  uploadChallengeDocker: (id: string, file: File) => {
+    const form = new FormData();
+    form.append("archive", file);
+    return apiUpload<ChallengeDockerStatus>(`/admin/challenges/${id}/docker/upload`, form);
+  },
+
+  rebuildChallengeDocker: (id: string) =>
+    apiFetch<ChallengeDockerStatus>(`/admin/challenges/${id}/docker/build`, {
+      method: "POST",
+      body: JSON.stringify({}),
+    }),
 
   notices: () => apiFetch<Notice[]>("/admin/notices", {}),
 

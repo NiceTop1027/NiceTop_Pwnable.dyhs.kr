@@ -4,7 +4,7 @@ import type { PartialBlock } from "@blocknote/core";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { adminApi, api, ApiError, type AdminLecture } from "@/lib/api";
-import { blocksToMarkdown, parseMarkdownToBlocks } from "@/lib/blocknote-markdown";
+import { parseMarkdownToBlocks } from "@/lib/blocknote-markdown";
 import {
   DocumentEditorShell,
   type SaveState,
@@ -140,7 +140,7 @@ export function LectureEditor({ lectureId }: { lectureId: string }) {
           id: page.id.startsWith("new-") ? undefined : page.id,
           title: page.title.trim() || `페이지 ${index + 1}`,
           slug: page.slug || undefined,
-          content: blocksToMarkdown(page.blocks ?? []),
+          content: JSON.stringify(page.blocks ?? []),
           order: index,
         })),
       });

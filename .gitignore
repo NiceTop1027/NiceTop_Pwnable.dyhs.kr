@@ -10,6 +10,7 @@ node_modules/
 dist/
 build/
 .next/
+apps/web/.build-id
 out/
 *.tsbuildinfo
 
@@ -34,3 +35,6 @@ packages/database/prisma/migrations/
 .vscode/
 
 apps/api/uploads/
+apps/api/data/
+
+args

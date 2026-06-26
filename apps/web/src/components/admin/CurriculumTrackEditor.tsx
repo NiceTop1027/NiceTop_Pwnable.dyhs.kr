@@ -81,7 +81,7 @@ export function CurriculumTrackEditor({ trackId }: { trackId: string }) {
 
     setSaveState("saving");
     try {
-      const description = blocksToMarkdown(blocks ?? []);
+      const description = JSON.stringify(blocks ?? []);
       const updated = await adminApi.updateCurriculum( trackId, {
         title: title.trim() || "입문",
         tier,

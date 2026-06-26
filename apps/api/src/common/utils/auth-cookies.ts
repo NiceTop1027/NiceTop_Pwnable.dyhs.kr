@@ -23,10 +23,25 @@ function parseRefreshMaxAgeMs(configService: ConfigService): number {
 
 function cookieBaseOptions(configService: ConfigService) {
   const isProd = configService.get<string>('NODE_ENV') === 'production';
+  const apiUrl = configService.get<string>('API_URL', '');
+  const webUrl = configService.get<string>('WEB_URL', '');
+  let sameSite: 'lax' | 'none' = 'lax';
+
+  try {
+    const apiOrigin = new URL(apiUrl).origin;
+    const webOrigin = new URL(webUrl).origin;
+    if (apiOrigin && webOrigin && apiOrigin !== webOrigin) {
+      sameSite = 'none';
+    }
+  } catch {
+    // Ignore invalid URL values and keep sameSite as lax.
+  }
+
+  const secure = isProd || webUrl.startsWith('https://') || sameSite === 'none';
   return {
     httpOnly: true,
-    secure: isProd,
-    sameSite: 'lax' as const,
+    secure,
+    sameSite,
     path: '/',
   };
 }

@@ -4,6 +4,7 @@ import {
   IsInt,
   IsOptional,
   IsString,
+  Matches,
   Min,
   MinLength,
 } from 'class-validator';
@@ -16,6 +17,10 @@ export class CreateChallengeDto {
 
   @IsOptional()
   @IsString()
+  @Matches(/^[a-z0-9_-]+$/, {
+    message:
+      'Repository name may only contain a-z, 0-9, hyphen (-), and underscore (_)',
+  })
   slug?: string;
 
   @IsString()

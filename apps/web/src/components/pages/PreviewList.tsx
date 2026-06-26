@@ -12,7 +12,7 @@ export function PreviewList({ items }: { items: PreviewItem[] }) {
     <div>
       {items.map((item) => {
         const inner = (
-          <>
+          <div className="w-full">
             <div className="flex items-baseline justify-between gap-4">
               <h3 className="text-[1.0625rem] font-medium text-[var(--text)] transition-opacity group-hover:opacity-60">
                 {item.title}
@@ -22,7 +22,7 @@ export function PreviewList({ items }: { items: PreviewItem[] }) {
               )}
             </div>
             {item.desc && <p className="text-body mt-1">{item.desc}</p>}
-          </>
+          </div>
         );
 
         if (item.href) {

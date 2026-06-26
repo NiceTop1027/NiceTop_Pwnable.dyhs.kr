@@ -1,6 +1,6 @@
 "use client";
 
-import { useMotionValue, useScroll, type MotionValue } from "framer-motion";
+import { motion, useMotionValue, useScroll, useSpring, type MotionValue } from "framer-motion";
 import { createContext, useContext, useRef, type RefObject } from "react";
 import { useHydrated } from "@/lib/use-hydrated";
 
@@ -19,6 +19,13 @@ export function HomeStoryTrack({ children }: { children: React.ReactNode }) {
   const ref = useRef<HTMLDivElement>(null);
   const hydrated = useHydrated();
   const fallbackProgress = useMotionValue(0);
+  const pull = useMotionValue(0);
+  const pullSpring = useSpring(pull, {
+    stiffness: 280,
+    damping: 30,
+  });
+  const touchStartY = useRef<number | null>(null);
+  const canPull = useRef(false);
 
   const { scrollYProgress } = useScroll({
     target: ref,
@@ -30,9 +37,38 @@ export function HomeStoryTrack({ children }: { children: React.ReactNode }) {
   return (
     <HomeStoryTrackContext.Provider value={ref}>
       <HomeStoryScrollContext.Provider value={activeProgress}>
-        <div ref={ref} className="home-story-track">
+        <motion.div
+          ref={ref}
+          className="home-story-track"
+          style={{ y: pullSpring }}
+          onTouchStart={(event) => {
+            if (typeof window === "undefined") return;
+            canPull.current = window.scrollY <= 0;
+            touchStartY.current = event.touches[0]?.clientY ?? null;
+          }}
+          onTouchMove={(event) => {
+            if (!canPull.current || touchStartY.current === null) return;
+            const current = event.touches[0]?.clientY ?? 0;
+            const delta = current - touchStartY.current;
+            if (delta <= 0) {
+              pull.set(0);
+              return;
+            }
+            pull.set(Math.min(delta * 0.55, 96));
+          }}
+          onTouchEnd={() => {
+            canPull.current = false;
+            touchStartY.current = null;
+            pull.set(0);
+          }}
+          onTouchCancel={() => {
+            canPull.current = false;
+            touchStartY.current = null;
+            pull.set(0);
+          }}
+        >
           {children}
-        </div>
+        </motion.div>
       </HomeStoryScrollContext.Provider>
     </HomeStoryTrackContext.Provider>
   );

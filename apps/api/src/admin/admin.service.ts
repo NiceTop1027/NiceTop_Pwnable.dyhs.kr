@@ -8,6 +8,7 @@ import {
 import * as argon2 from 'argon2';
 import { existsSync, mkdirSync, writeFileSync } from 'fs';
 import { join } from 'path';
+import { extname } from 'path';
 import { randomBytes } from 'crypto';
 import { Prisma, Role } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
@@ -380,8 +381,42 @@ export class AdminService {
     });
   }
 
+  private isAutoChallengeSlug(slug: string, title: string): boolean {
+    if (slug === slugify(title)) return true;
+    return slug === '제목-없음' || slug === 'item';
+  }
+
+  private async uniqueChallengeSlug(
+    base: string,
+    excludeId?: string,
+  ): Promise<string> {
+    let slug = base || 'item';
+    let suffix = 2;
+
+    while (true) {
+      const conflict = await this.prisma.challenge.findUnique({
+        where: { slug },
+      });
+      if (!conflict || conflict.id === excludeId) return slug;
+      slug = `${base || 'item'}-${suffix}`;
+      suffix += 1;
+    }
+  }
+
   async createChallenge(adminId: string, dto: CreateChallengeDto) {
-    const slug = dto.slug ?? slugify(dto.title);
+    let slug: string;
+
+    if (dto.slug) {
+      const conflict = await this.prisma.challenge.findUnique({
+        where: { slug: dto.slug },
+      });
+      if (conflict) {
+        throw new ConflictException('Repository name is already in use');
+      }
+      slug = dto.slug;
+    } else {
+      slug = await this.uniqueChallengeSlug(slugify(dto.title));
+    }
     const flagHash = await argon2.hash(dto.flag);
 
     const challenge = await this.prisma.challenge.create({
@@ -438,11 +473,28 @@ export class AdminService {
     id: string,
     dto: UpdateChallengeDto,
   ) {
+    const existing = await this.prisma.challenge.findUnique({ where: { id } });
+    if (!existing) {
+      throw new NotFoundException('Challenge not found');
+    }
+
     const data: Record<string, unknown> = { ...dto };
     delete data.flag;
 
+    if ('dockerImage' in dto) {
+      data.dockerImage = dto.dockerImage?.trim() ? dto.dockerImage.trim() : null;
+    }
+
     if (dto.flag) {
       data.flagHash = await argon2.hash(dto.flag);
+    }
+
+    if (
+      dto.title &&
+      dto.title !== existing.title &&
+      this.isAutoChallengeSlug(existing.slug, existing.title)
+    ) {
+      data.slug = await this.uniqueChallengeSlug(slugify(dto.title), id);
     }
 
     const challenge = await this.prisma.challenge.update({
@@ -461,6 +513,14 @@ export class AdminService {
   }
 
   async deleteChallenge(adminId: string, id: string) {
+    const existing = await this.prisma.challenge.findUnique({ where: { id } });
+    if (!existing) {
+      throw new NotFoundException('Challenge not found');
+    }
+    if (existing.isPublished) {
+      throw new ForbiddenException('Published challenges cannot be deleted');
+    }
+
     await this.prisma.challenge.delete({ where: { id } });
     await this.adminLog.log(adminId, 'challenge.delete', 'challenge', id);
     return { success: true };
@@ -745,16 +805,31 @@ export class AdminService {
     if (!file?.buffer?.length) {
       throw new BadRequestException('No file uploaded');
     }
-
-    const sanitized = await sanitizeImageBuffer(file.buffer, 5 * 1024 * 1024);
-
+    const isImage = /^image\//.test(file.mimetype);
     const dir = join(process.cwd(), 'uploads', 'content');
     if (!existsSync(dir)) {
       mkdirSync(dir, { recursive: true });
     }
 
-    const filename = `${randomBytes(24).toString('hex')}${sanitized.extension}`;
-    writeFileSync(join(dir, filename), sanitized.buffer);
+    let filename: string;
+    let data: Buffer;
+
+    if (isImage) {
+      const sanitized = await sanitizeImageBuffer(file.buffer, 5 * 1024 * 1024);
+      filename = `${randomBytes(24).toString('hex')}${sanitized.extension}`;
+      data = sanitized.buffer;
+    } else {
+      const extension = extname(file.originalname).toLowerCase();
+      const safeExtension = /^\.[a-z0-9]+$/.test(extension) ? extension : '.bin';
+      filename = `${randomBytes(24).toString('hex')}${safeExtension}`;
+      data = file.buffer;
+    }
+
+    if (data.length > 5 * 1024 * 1024) {
+      throw new BadRequestException('Uploaded file is too large');
+    }
+
+    writeFileSync(join(dir, filename), data);
 
     const url = `/api/uploads/content/${filename}`;
 

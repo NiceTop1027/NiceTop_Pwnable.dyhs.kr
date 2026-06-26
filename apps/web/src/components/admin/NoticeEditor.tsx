@@ -42,7 +42,7 @@ export function NoticeEditor({ noticeId }: { noticeId: string }) {
 
     setSaveState("saving");
     try {
-      const content = blocksToMarkdown(blocks ?? []);
+      const content = JSON.stringify(blocks ?? []);
       const updated = await adminApi.updateNotice( noticeId, {
         title: title.trim() || "제목 없음",
         content,

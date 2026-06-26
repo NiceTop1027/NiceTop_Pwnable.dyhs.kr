@@ -25,13 +25,12 @@ export default async function BoardPostEditPage({ params }: Props) {
     notFound();
   }
 
-  try {
-    const me = await serverApiFetch<{ id: string }>("/auth/me");
-    if (me.id !== post.author.id) {
-      redirect(`/community/${slug}/${postId}`);
-    }
-  } catch {
+  const me = await serverApiFetch<{ id: string } | null>("/auth/me");
+  if (!me) {
     redirect(`/auth/login?next=${encodeURIComponent(`/community/${slug}/${postId}/edit`)}`);
+  }
+  if (me.id !== post.author.id) {
+    redirect(`/community/${slug}/${postId}`);
   }
 
   return (

@@ -1,12 +1,12 @@
 export const CINEMATIC_LAYOUT = {
-  heroVh: 220,
-  chapterVh: 280,
+  heroVh: 100,
+  chapterVh: 140,
   chapterCount: 4,
-  statementVh: 360,
+  statementVh: 180,
 } as const;
 
 /** 챕터 전환 페이드 비율 — 낮을수록 한 장면에 머무는 시간이 길어짐 */
-const ACT_FADE_RATIO = 0.085;
+const ACT_FADE_RATIO = 0.11;
 
 function smoothstep(value: number) {
   const t = Math.max(0, Math.min(1, value));
