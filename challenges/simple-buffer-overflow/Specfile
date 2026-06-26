@@ -1,0 +1,14 @@
+[wargame]
+title = Simple Buffer Overflow
+flag = DYHS{stack_buff0v3rfl0w_pwn_4c1d}
+tags = pwnable
+difficulty = easy
+points = 100
+
+[vm]
+os = linux
+memory = 128
+disk = 256
+ports = 9999/tcp
+allow_outgoing = false
+docker_compose = false
