@@ -4270,7 +4270,7 @@ a {
     border-left: none;
   }
 
-  .admin-metric-cell:not(3n + 1) {
+  .admin-metric-cell:not(:nth-child(3n + 1)) {
     border-left: 1px solid rgba(255, 255, 255, 0.08);
   }
 }
